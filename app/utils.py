@@ -1,6 +1,4 @@
 import PyPDF2
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 
 
 def extract_text_from_pdf(file):
@@ -16,11 +14,17 @@ def clean_text(text):
     tokens = [token.lemma_ for token in doc if not token.is_stop and token.is_alpha]
     return " ".join(tokens)
 
-def calculate_similarity(resume_text, jd_text):
-    vectorizer = TfidfVectorizer()
-    vectors = vectorizer.fit_transform([resume_text, jd_text])
-    similarity = cosine_similarity(vectors[0], vectors[1])
-    return round(similarity[0][0] * 100, 2)
+def calculate_similarity(resume_text, job_description):
+    resume_words = set(resume_text.split())
+    jd_words = set(job_description.split())
+
+    if not jd_words:
+        return 0
+
+    matched = resume_words.intersection(jd_words)
+    score = (len(matched) / len(jd_words)) * 100
+
+    return round(score, 2)
 
 def generate_career_suggestions(score, missing_skills):
 
