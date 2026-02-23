@@ -20,9 +20,12 @@ templates = Jinja2Templates(directory="app/templates")
 # ---------------- HOME ----------------
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    user = request.session.get("user")
-    return templates.TemplateResponse("index.html", {"request": request, "user": user})
+    user_email = request.session.get("user")
 
+    if not user_email:
+        return RedirectResponse(url="/login", status_code=303)
+
+    return templates.TemplateResponse("index.html", {"request": request})
 
 # ---------------- REGISTER ----------------
 @app.get("/register", response_class=HTMLResponse)
