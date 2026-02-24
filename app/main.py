@@ -1,3 +1,4 @@
+from app.utils import generate_career_suggestions
 from fastapi import UploadFile, File
 from app.utils import extract_text_from_pdf, clean_text, calculate_similarity
 from fastapi import FastAPI, Request, Form, Depends
@@ -113,14 +114,17 @@ async def analyze_resume(
 
     similarity_score = calculate_similarity(cleaned_resume, cleaned_jd)
 
+    suggestions = generate_career_suggestions(similarity_score, [])
+
     return templates.TemplateResponse(
         "result.html",
         {
             "request": request,
-            "score": similarity_score
+            "score": similarity_score,
+            "suggestions": suggestions,
+	    "user": request.session.get("user")
         }
     )
-
 
 # ---------------- DASHBOARD ----------------
 @app.get("/dashboard", response_class=HTMLResponse)
