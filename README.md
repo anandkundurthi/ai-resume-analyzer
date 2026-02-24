@@ -1,168 +1,170 @@
-📊 AI Resume Analyzer
+AI Resume Analyzer
+Project Overview
 
-An AI-powered Resume Analyzer built using FastAPI, Python, and SQLAlchemy that helps job seekers compare their resumes with job descriptions and identify skill gaps. The application includes user authentication, PDF resume parsing, similarity scoring, career suggestions, and a dashboard to track analysis history.
+AI Resume Analyzer is a web application built using FastAPI and Python that helps job seekers evaluate their resumes against job descriptions.
 
-🔗 Live App: https://ai-resume-analyzer-tuet.onrender.com
+The system calculates a similarity score, identifies matched and missing skills, and provides career suggestions. It also includes user authentication and a dashboard to track analysis history.
 
-🔗 GitHub Repository: https://github.com/anandkundurthi/ai-resume-analyzer
+Live Demo
 
-🚀 Features
-🔐 Authentication System
+Live Application:
+https://ai-resume-analyzer-tuet.onrender.com
+
+GitHub Repository:
+https://github.com/anandkundurthi/ai-resume-analyzer
+
+Key Features
+1. User Authentication
 
 User Registration
 
 Secure Login
 
-Session-based authentication
+Session Management
 
-Logout functionality
+Logout Functionality
 
-📄 Resume Analysis
+2. Resume Analysis
 
-Upload PDF resume
+Upload Resume (PDF format)
 
-Paste Job Description
+Enter Job Description
 
-Extract text using PyPDF2
+Extract Resume Text using PyPDF2
 
-Clean and tokenize text
+Clean and Process Text
 
-Calculate similarity score
+Calculate Similarity Score
 
-Identify matched skills
+Identify Matched Skills
 
-Detect missing skills
+Identify Missing Skills
 
-Generate career suggestions
+Generate Career Suggestions
 
-📊 Dashboard
+3. Dashboard
 
-View analysis history
+View Analysis History
 
-Track total scans
+Display Total Resume Scans
 
-View average score
+Calculate Average Score
 
-Start new analysis
+Start New Analysis
 
-Secure access (only logged-in users)
+Secure Access (Login Required)
 
-🧠 Tech Stack
+Tech Stack
+Backend
 
-Backend Framework: FastAPI
+Python
 
-Language: Python 3
+FastAPI
 
-Database: SQLite
+Database
 
-ORM: SQLAlchemy
-
-Authentication: Session Middleware
-
-Templating Engine: Jinja2
-
-PDF Processing: PyPDF2
-
-Deployment: Render
-
-📁 Project Structure
-ai-resume-analyzer/
-│
-├── app/
-│   ├── main.py              # FastAPI routes
-│   ├── auth_db.py           # Database models & auth logic
-│   ├── utils.py             # Resume analysis logic
-│   ├── skill_db.py          # Skills list
-│   ├── templates/
-│   │   ├── login.html
-│   │   ├── register.html
-│   │   ├── index.html
-│   │   ├── result.html
-│   │   └── dashboard.html
-│
-├── requirements.txt
-└── README.md
-⚙️ Installation (Run Locally)
-1️⃣ Clone the repository
-git clone https://github.com/anandkundurthi/ai-resume-analyzer.git
-cd ai-resume-analyzer
-2️⃣ Create virtual environment
-python3 -m venv venv
-source venv/bin/activate   # macOS/Linux
-venv\Scripts\activate      # Windows
-3️⃣ Install dependencies
-pip install -r requirements.txt
-4️⃣ Run the application
-uvicorn app.main:app --reload
-
-Open in browser:
-
-http://127.0.0.1:8000
-🔄 Application Flow
-
-If user exists →
-Login → Upload Resume → Analyze → View Result → Dashboard → History
-
-If user does not exist →
-Create Account → Login → Upload Resume → Analyze → View Result → Dashboard
-
-🧩 How It Works
-
-User uploads resume (PDF format)
-
-System extracts text using PyPDF2
-
-Resume text is cleaned and tokenized
-
-Job description is processed
-
-Similarity score is calculated
-
-Matched and missing skills are identified
-
-Career suggestions are generated
-
-Results are stored in database
-
-User can view history in dashboard
-
-🎯 Skills Demonstrated
-
-Backend Development with FastAPI
-
-REST API Design
-
-File Upload Handling
-
-PDF Parsing
-
-Session Authentication
+SQLite
 
 SQLAlchemy ORM
 
-Database Modeling
+Frontend
 
-Jinja2 Template Rendering
+HTML
 
-Cloud Deployment (Render)
+CSS
+
+Jinja2 Templates
+
+Other Tools
+
+PyPDF2 (PDF text extraction)
+
+Session Middleware (Authentication)
+
+Render (Deployment)
+
+Project Structure
+
+ai-resume-analyzer
+│
+├── app
+│ ├── main.py
+│ ├── auth_db.py
+│ ├── utils.py
+│ ├── skill_db.py
+│ └── templates
+│
+├── requirements.txt
+└── README.md
+
+How It Works
+
+User registers or logs in.
+
+User uploads a resume in PDF format.
+
+User pastes a job description.
+
+The system extracts and processes resume text.
+
+Resume and job description are compared.
+
+Similarity score is calculated.
+
+Matched and missing skills are displayed.
+
+Career suggestions are generated.
+
+Results are saved in the dashboard.
+
+Installation (Run Locally)
+Step 1: Clone Repository
+
+git clone https://github.com/anandkundurthi/ai-resume-analyzer.git
+
+cd ai-resume-analyzer
+
+Step 2: Create Virtual Environment
+
+python3 -m venv venv
+source venv/bin/activate
+
+Step 3: Install Dependencies
+
+pip install -r requirements.txt
+
+Step 4: Run Application
+
+uvicorn app.main:app --reload
+
+Open in browser:
+http://127.0.0.1:8000
+
+Skills Demonstrated
+
+Backend Development with FastAPI
+
+RESTful API Design
+
+File Upload Handling
+
+PDF Processing
+
+Authentication & Session Management
+
+Database Modeling with SQLAlchemy
+
+Deployment on Cloud (Render)
 
 Debugging Production Errors
 
-📌 Deployment
+Deployment
 
-The application is deployed on Render with:
+This project is deployed using Render with:
 
 uvicorn app.main:app --host 0.0.0.0 --port $PORT
 
-Render automatically:
-
-Installs dependencies
-
-Builds the app
-
-Hosts it securely over HTTPS
-
-👨‍💻 Author
+Author
 
 Anand Kundurthi
 Backend Developer | Python | FastAPI | SQL
@@ -171,6 +173,3 @@ LinkedIn: https://www.linkedin.com/in/anandkundurthi
 
 GitHub: https://github.com/anandkundurthi
 
-📜 License
-
-This project is open-source and available under the MIT License.
