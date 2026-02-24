@@ -1,11 +1,11 @@
-AI Resume Analyzer
-Project Overview
+# AI Resume Analyzer
+# Project Overview
 
 AI Resume Analyzer is a web application built using FastAPI and Python that helps job seekers evaluate their resumes against job descriptions.
 
 The system calculates a similarity score, identifies matched and missing skills, and provides career suggestions. It also includes user authentication and a dashboard to track analysis history.
 
-Live Demo
+## Live Demo
 
 Live Application:
 https://ai-resume-analyzer-tuet.onrender.com
@@ -13,7 +13,7 @@ https://ai-resume-analyzer-tuet.onrender.com
 GitHub Repository:
 https://github.com/anandkundurthi/ai-resume-analyzer
 
-Key Features
+## Key Features
 1. User Authentication
 
 User Registration
@@ -83,7 +83,7 @@ Session Middleware (Authentication)
 
 Render (Deployment)
 
-Project Structure
+## Project Structure
 
 ai-resume-analyzer
 │
@@ -97,7 +97,7 @@ ai-resume-analyzer
 ├── requirements.txt
 └── README.md
 
-How It Works
+## How It Works
 
 User registers or logs in.
 
@@ -117,7 +117,7 @@ Career suggestions are generated.
 
 Results are saved in the dashboard.
 
-Installation (Run Locally)
+## Installation (Run Locally)
 Step 1: Clone Repository
 
 git clone https://github.com/anandkundurthi/ai-resume-analyzer.git
@@ -140,7 +140,7 @@ uvicorn app.main:app --reload
 Open in browser:
 http://127.0.0.1:8000
 
-Skills Demonstrated
+## Skills Demonstrated
 
 Backend Development with FastAPI
 
@@ -158,13 +158,13 @@ Deployment on Cloud (Render)
 
 Debugging Production Errors
 
-Deployment
+## Deployment
 
 This project is deployed using Render with:
 
 uvicorn app.main:app --host 0.0.0.0 --port $PORT
 
-Author
+## Author
 
 Anand Kundurthi
 Backend Developer | Python | FastAPI | SQL
@@ -172,4 +172,5 @@ Backend Developer | Python | FastAPI | SQL
 LinkedIn: https://www.linkedin.com/in/anandkundurthi
 
 GitHub: https://github.com/anandkundurthi
+
 
