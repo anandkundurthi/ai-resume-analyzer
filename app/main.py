@@ -42,6 +42,36 @@ def login(request: Request,
 
     request.session["user"] = user.email
     return RedirectResponse("/upload", status_code=303)
+# ---------------- REGISTER GET ----------------
+@app.get("/register", response_class=HTMLResponse)
+def register_page(request: Request):
+    return templates.TemplateResponse("register.html", {"request": request})
+
+# ---------------- REGISTER POST ----------------
+@app.post("/register")
+def register(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    existing_user = db.query(User).filter(User.email == email).first()
+
+    if existing_user:
+        return templates.TemplateResponse(
+            "register.html",
+            {"request": request, "error": "User already exists"}
+        )
+
+    new_user = User(
+        email=email,
+        hashed_password=password  # or use hash_password(password)
+    )
+
+    db.add(new_user)
+    db.commit()
+
+    return RedirectResponse("/login", status_code=303)
 
 
 # ---------------- UPLOAD ----------------
