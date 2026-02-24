@@ -34,7 +34,8 @@ def login(request: Request,
 
     user = db.query(User).filter(User.email == email).first()
 
-    if not user or not verify_password(password, user.hashed_password):
+    # SIMPLE CHECK (no hashing for now)
+    if not user or password != user.hashed_password:
         return templates.TemplateResponse(
             "login.html",
             {"request": request, "error": "Invalid credentials"}
@@ -42,6 +43,7 @@ def login(request: Request,
 
     request.session["user"] = user.email
     return RedirectResponse("/upload", status_code=303)
+
 # ---------------- REGISTER GET ----------------
 @app.get("/register", response_class=HTMLResponse)
 def register_page(request: Request):
@@ -65,7 +67,7 @@ def register(
 
     new_user = User(
         email=email,
-        hashed_password=password  # or use hash_password(password)
+        hashed_password=password
     )
 
     db.add(new_user)
