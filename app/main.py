@@ -4,6 +4,7 @@ from app.auth_db import SessionLocal, User, Analysis
 from fastapi import FastAPI, UploadFile, File, Form, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy.orm import Session
 
@@ -88,13 +89,21 @@ def logout(request: Request):
 
 
 # ---------------- ANALYZE ----------------
-@app.post("/analyze/", response_class=HTMLResponse)
+@app.post("/analyze", response_class=HTMLResponse)
 async def analyze_resume(
     request: Request,
     resume: UploadFile = File(...),
-    job_description: str = Form(...)
+    job_description: str = Form(...),
+    db: Session = Depends(get_db)
 ):
+    resume.file.seek(0)
     resume_text = extract_text_from_pdf(resume.file)
+    if not resume_text:
+        return templates.TemplateResponse(
+            "index.html",
+            {"request": request, "error": "Could not read PDF"}
+        )
+
     cleaned_resume = clean_text(resume_text)
     cleaned_jd = clean_text(job_description)
 
