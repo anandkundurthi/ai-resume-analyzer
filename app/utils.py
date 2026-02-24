@@ -1,8 +1,8 @@
-import PyPDF2
+from PyPDF2 import PdfReader
 
 
 def extract_text_from_pdf(file):
-    reader = PyPDF2.PdfReader(file)
+    reader = PdfReader(file)
     text = ""
     for page in reader.pages:
         if page.extract_text():
@@ -10,9 +10,10 @@ def extract_text_from_pdf(file):
     return text
 
 def clean_text(text):
-    doc = nlp(text.lower())
-    tokens = [token.lemma_ for token in doc if not token.is_stop and token.is_alpha]
-    return " ".join(tokens)
+    text = text.lower()
+    words = text.split()
+    cleaned_words = [word for word in words if word.isalpha()]
+    return " ".join(cleaned_words)
 
 def calculate_similarity(resume_text, job_description):
     resume_words = set(resume_text.split())
@@ -23,7 +24,6 @@ def calculate_similarity(resume_text, job_description):
 
     matched = resume_words.intersection(jd_words)
     score = (len(matched) / len(jd_words)) * 100
-
     return round(score, 2)
 
 def generate_career_suggestions(score, missing_skills):
