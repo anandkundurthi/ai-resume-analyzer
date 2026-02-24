@@ -29,28 +29,37 @@ def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 # ---------------- REGISTER ----------------
-@app.get("/register", response_class=HTMLResponse)
-def register_page(request: Request):
-    return templates.TemplateResponse("register.html", {"request": request})
-
-
 @app.post("/register")
-def register(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+def register(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db)
+):
+
     existing_user = db.query(User).filter(User.email == email).first()
     if existing_user:
-        return templates.TemplateResponse("register.html", {"request": request, "error": "User already exists"})
+        return templates.TemplateResponse(
+            "register.html",
+            {"request": request, "error": "User already exists"}
+        )
 
-    new_user = User(email=email, hashed_password=hash_password(password))
-
-try:
-    db.add(new_user)
-    db.commit()
-except IntegrityError:
-    db.rollback()
-    return templates.TemplateResponse(
-        "register.html",
-        {"request": request, "error": "Email already registered"}
+    new_user = User(
+        email=email,
+        hashed_password=hash_password(password)
     )
+
+    try:
+        db.add(new_user)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        return templates.TemplateResponse(
+            "register.html",
+            {"request": request, "error": "Email already registered"}
+        )
+
+    return RedirectResponse(url="/login", status_code=303)
 
 
 # ---------------- LOGIN ----------------
