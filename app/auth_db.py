@@ -14,7 +14,11 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 # PASSWORD HASHING
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+def hash_password(password: str):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def verify_password(plain_password: str, hashed_password: str):
+    return hashlib.sha256(plain_password.encode()).hexdigest() == hashed_password
 
 
 # USER MODEL
