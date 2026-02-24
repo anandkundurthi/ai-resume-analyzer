@@ -1,7 +1,6 @@
 fastapi
 uvicorn
 jinja2
-python-multipart
 sqlalchemy
+python-multipart
 itsdangerous
-PyPDF2

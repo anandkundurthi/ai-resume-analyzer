@@ -2,52 +2,6 @@
 <html>
 <head>
     <title>Analysis Result</title>
-
-   <style>
-        body {
-            background: #111;
-            color: white;
-            font-family: Arial;
-            padding: 40px;
-        }
-
-        .action-buttons {
-            margin-top: 30px;
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            text-decoration: none;
-            padding: 12px 22px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            display: inline-block;
-            transition: 0.3s ease;
-            color: white;
-        }
-
-        .dashboard-btn {
-            background: linear-gradient(135deg, #00c853, #009624);
-        }
-
-        .new-btn {
-            background: linear-gradient(135deg, #2979ff, #1565c0);
-        }
-
-        .logout-btn {
-            background: linear-gradient(135deg, #ff1744, #b71c1c);
-        }
-
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-        }
-    </style>
-
     <style>
         body {
             background: #111;
@@ -80,8 +34,53 @@
         a {
             color: #00c6ff;
         }
-    </style>
+/* Action Buttons */
+.action-buttons {
+    margin-top: 30px;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
 
+.btn {
+    text-decoration: none;
+    padding: 12px 22px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    display: inline-block;
+    transition: 0.3s ease;
+    color: white;
+}
+
+/* Dashboard */
+.dashboard-btn {
+    background: linear-gradient(135deg, #00c853, #009624);
+}
+
+/* New Analysis */
+.new-btn {
+    background: linear-gradient(135deg, #2979ff, #1565c0);
+}
+
+/* Logout */
+.logout-btn {
+    background: linear-gradient(135deg, #ff1744, #b71c1c);
+}
+
+.btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+}
+
+
+
+
+
+
+
+    </style>
 
 
 
@@ -122,12 +121,13 @@
 </div>
 
 {% if user %}
-
+{% if user %}
 <div class="action-buttons">
-    <a href="/dashboard" class="btn dashboard-btn">Go to Dashboard</a>
-    <a href="/upload" class="btn new-btn">Start New Analysis</a>
-    <a href="/logout" class="btn logout-btn">Logout</a>
+    <a href="/dashboard" class="btn dashboard-btn">📊 Go to Dashboard</a>
+    <a href="/upload" class="btn new-btn">🚀 Start New Analysis</a>
+    <a href="/logout" class="btn logout-btn">🔓 Logout</a>
 </div>
+{% endif %}
 {% endif %}
 
 </body>
