@@ -1,3 +1,4 @@
+import hashlib
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
@@ -44,13 +45,13 @@ Base.metadata.create_all(bind=engine)
 
 
 # UTILITY FUNCTIONS
+
 def hash_password(password: str):
-    return pwd_context.hash(password)
+    return hashlib.sha256(password.encode()).hexdigest()
 
 
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
-
+def verify_password(plain_password: str, hashed_password: str):
+    return hashlib.sha256(plain_password.encode()).hexdigest() == hashed_password
 
 def get_db():
     db = SessionLocal()
