@@ -20,8 +20,8 @@ templates = Jinja2Templates(directory="app/templates")
 
 
 # ---------------- HOME ----------------
-@app.get("/", response_class=HTMLResponse)
-def home(request: Request):
+@app.get("/upload", response_class=HTMLResponse)
+def upload_page(request: Request):
 
     user_email = request.session.get("user")
 
@@ -71,10 +71,9 @@ def register(
     return RedirectResponse(url="/login", status_code=303)    
 
 # ---------------- LOGIN ----------------
-@app.get("/login", response_class=HTMLResponse)
-def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
-
+@app.get("/", response_class=HTMLResponse)
+def root():
+    return RedirectResponse("/login", status_code=303)
 
 @app.post("/login")
 def login(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
@@ -84,7 +83,7 @@ def login(request: Request, email: str = Form(...), password: str = Form(...), d
         return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"})
 
     request.session["user"] = user.email
-    return RedirectResponse(url="/dashboard", status_code=303)
+    return RedirectResponse(url="/upload", status_code=303)
 
 
 # ---------------- LOGOUT ----------------
@@ -102,12 +101,28 @@ async def analyze_resume(
     job_description: str = Form(...),
     db: Session = Depends(get_db)
 ):
+
+    # 🔒 1. Protect route
+    user_email = request.session.get("user")
+    if not user_email:
+        return RedirectResponse("/login", status_code=303)
+
+    user = db.query(User).filter(User.email == user_email).first()
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+
+    # 📄 2. Read PDF safely
     resume.file.seek(0)
     resume_text = extract_text_from_pdf(resume.file)
+
     if not resume_text:
         return templates.TemplateResponse(
             "index.html",
-            {"request": request, "error": "Could not read PDF"}
+            {
+                "request": request,
+                "error": "Could not read PDF",
+                "user": user_email
+            }
         )
 
     cleaned_resume = clean_text(resume_text)
@@ -126,25 +141,18 @@ async def analyze_resume(
 
     suggestions = generate_career_suggestions(similarity_score, missing_skills)
 
-    # Save to DB if logged in
-    if request.session.get("user"):
-        db = SessionLocal()
-        user = db.query(User).filter(
-            User.email == request.session.get("user")
-        ).first()
+    # 💾 3. Save to database
+    new_analysis = Analysis(
+        user_id=user.id,
+        score=similarity_score,
+        matched_skills=", ".join(matched_skills),
+        missing_skills=", ".join(missing_skills)
+    )
 
-        if user:
-            new_analysis = Analysis(
-                user_id=user.id,
-                score=int(similarity_score),
-                matched_skills=",".join(matched_skills),
-                missing_skills=",".join(missing_skills)
-            )
-            db.add(new_analysis)
-            db.commit()
+    db.add(new_analysis)
+    db.commit()
 
-        db.close()
-
+    # 🎯 4. Return result page
     return templates.TemplateResponse(
         "result.html",
         {
@@ -153,7 +161,7 @@ async def analyze_resume(
             "matched": matched_skills,
             "missing": missing_skills,
             "suggestions": suggestions,
-	    "user": request.session.get("user")  # MUST EXIST
+            "user": user_email
         }
     )
 # ---------------- DASHBOARD  ---------------- 
