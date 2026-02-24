@@ -1,6 +1,7 @@
-fastapi
+kfastapi
 uvicorn
 jinja2
-sqlalchemy
 python-multipart
+sqlalchemy
 itsdangerous
+PyPDF2
