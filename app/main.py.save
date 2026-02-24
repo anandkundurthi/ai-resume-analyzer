@@ -70,25 +70,25 @@ def register(
 
     return RedirectResponse(url="/login", status_code=303)    
 
+
 # ---------------- LOGIN ----------------
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request):
     return templates.TemplateResponse(
         "login.html",
         {"request": request}
-    )
+ 
+)
 @app.post("/login")
 def login(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == email).first()
-    
+
     if not user or not verify_password(password, user.hashed_password):
-        return templates.TemplateResponse(
-            "login.html",
-            {"request": request, "error": "Invalid credentials"}
-        )
-    
+        return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"})
+
     request.session["user"] = user.email
     return RedirectResponse(url="/upload", status_code=303)
+
 
 # ---------------- LOGOUT ----------------
 @app.get("/logout")
