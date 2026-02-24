@@ -22,13 +22,16 @@ templates = Jinja2Templates(directory="app/templates")
 # ---------------- HOME ----------------
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
+
     user_email = request.session.get("user")
 
     if not user_email:
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse("/login", status_code=303)
 
-    return templates.TemplateResponse("index.html", {"request": request})
-
+    return templates.TemplateResponse(
+        "index.html",
+        {"request": request}
+    )
 # ---------------- REGISTER PAGE ----------------
 @app.get("/register", response_class=HTMLResponse)
 def register_page(request: Request):
@@ -85,7 +88,7 @@ def login(request: Request, email: str = Form(...), password: str = Form(...), d
 @app.get("/logout")
 def logout(request: Request):
     request.session.clear()
-    return RedirectResponse(url="/", status_code=303)
+    return RedirectResponse("/login", status_code=303)
 
 
 # ---------------- ANALYZE ----------------
@@ -146,7 +149,8 @@ async def analyze_resume(
             "score": similarity_score,
             "matched": matched_skills,
             "missing": missing_skills,
-            "suggestions": suggestions
+            "suggestions": suggestions,
+	    "user": request.session.get("user")  # MUST EXIST
         }
     )
 # ---------------- DASHBOARD  ---------------- 

@@ -71,8 +71,10 @@
     </ul>
 </div>
 
-
-<a href="/dashboard">Go to Dashboard</a>
+{% if user %}
+    <a href="/dashboard">Go to Dashboard</a>
+    <a href="/logout">Logout</a>
+{% endif %}
 
 </body>
 </html>
