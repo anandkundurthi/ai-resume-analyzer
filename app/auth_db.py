@@ -1,6 +1,6 @@
-from sqlalchemy import Column, Integer, String, create_engine
+from sqlalchemy import Column, Integer, String, ForeignKey, create_engine
+from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 import hashlib
 DATABASE_URL = "sqlite:///./users.db"
 
@@ -32,14 +32,13 @@ class User(Base):
 
 # ANALYSIS MODEL
 class Analysis(Base):
-    __tablename__ = "analyses"
+    __tablename__ = "analysis"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     score = Column(Integer)
     matched_skills = Column(String)
     missing_skills = Column(String)
-    created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User")
 
