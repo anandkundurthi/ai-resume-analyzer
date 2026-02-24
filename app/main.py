@@ -1,3 +1,5 @@
+from fastapi import UploadFile, File
+from app.utils import extract_text_from_pdf, clean_text, calculate_similarity
 from fastapi import FastAPI, Request, Form, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -85,6 +87,38 @@ def upload_page(request: Request):
     return templates.TemplateResponse(
         "index.html",
         {"request": request}
+    )
+
+# ---------------- ANALYZE ----------------
+@app.post("/analyze/", response_class=HTMLResponse)
+async def analyze_resume(
+    request: Request,
+    resume: UploadFile = File(...),
+    job_description: str = Form(...)
+):
+    if not request.session.get("user"):
+        return RedirectResponse("/login", status_code=303)
+
+    resume.file.seek(0)
+    resume_text = extract_text_from_pdf(resume.file)
+
+    if not resume_text:
+        return templates.TemplateResponse(
+            "index.html",
+            {"request": request, "error": "Could not read PDF"}
+        )
+
+    cleaned_resume = clean_text(resume_text)
+    cleaned_jd = clean_text(job_description)
+
+    similarity_score = calculate_similarity(cleaned_resume, cleaned_jd)
+
+    return templates.TemplateResponse(
+        "result.html",
+        {
+            "request": request,
+            "score": similarity_score
+        }
     )
 
 
