@@ -22,6 +22,7 @@ templates = Jinja2Templates(directory="app/templates")
 # ---------------- HOME ----------------
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
+    return RedirectResponse("/login", status_code=303)
 
     user_email = request.session.get("user")
 
@@ -81,7 +82,7 @@ def login(request: Request, email: str = Form(...), password: str = Form(...), d
         return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"})
 
     request.session["user"] = user.email
-    return RedirectResponse(url="/", status_code=303)
+    return RedirectResponse(url="/dashboard", status_code=303)
 
 
 # ---------------- LOGOUT ----------------
@@ -154,36 +155,29 @@ async def analyze_resume(
         }
     )
 # ---------------- DASHBOARD  ---------------- 
+# ---------------- DASHBOARD ----------------
 @app.get("/dashboard", response_class=HTMLResponse)
-def dashboard(request: Request):
+def dashboard(request: Request, db: Session = Depends(get_db)):
 
     user_email = request.session.get("user")
 
     if not user_email:
         return RedirectResponse("/login", status_code=303)
 
-    db = SessionLocal()
-
     user = db.query(User).filter(User.email == user_email).first()
 
     if not user:
-        db.close()
         return RedirectResponse("/login", status_code=303)
 
     analyses = db.query(Analysis).filter(
         Analysis.user_id == user.id
-    ).order_by(Analysis.created_at.desc()).all()
+    ).all()
 
     total_scans = len(analyses)
 
-    valid_scores = [a.score for a in analyses if a.score is not None]
-
-    if valid_scores:
-        avg_score = int(sum(valid_scores) / len(valid_scores))
-    else:
-        avg_score = 0
-
-    db.close()
+    avg_score = 0
+    if total_scans > 0:
+        avg_score = int(sum(a.score or 0 for a in analyses) / total_scans)
 
     return templates.TemplateResponse(
         "dashboard.html",
@@ -191,6 +185,7 @@ def dashboard(request: Request):
             "request": request,
             "analyses": analyses,
             "total_scans": total_scans,
-            "avg_score": avg_score
+            "avg_score": avg_score,
+            "user": user_email
         }
     )
