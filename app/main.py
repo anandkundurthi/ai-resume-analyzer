@@ -152,6 +152,7 @@ async def analyze_resume(
 # ---------------- DASHBOARD  ---------------- 
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard(request: Request):
+
     user_email = request.session.get("user")
 
     if not user_email:
@@ -159,33 +160,33 @@ def dashboard(request: Request):
 
     db = SessionLocal()
 
-    user = db.query(User).filter(
-        User.email == request.session.get("user")
-    ).first()
-   if not user:
+    user = db.query(User).filter(User.email == user_email).first()
+
+    if not user:
+        db.close()
         return RedirectResponse("/login", status_code=303)
 
-analyses = db.query(Analysis).filter(
-    Analysis.user_id == user.id
-).order_by(Analysis.created_at.desc()).all()
+    analyses = db.query(Analysis).filter(
+        Analysis.user_id == user.id
+    ).order_by(Analysis.created_at.desc()).all()
 
-total_scans = len(analyses)
+    total_scans = len(analyses)
 
-valid_scores = [a.score for a in analyses if a.score is not None]
+    valid_scores = [a.score for a in analyses if a.score is not None]
 
-if valid_scores:
-    avg_score = int(sum(valid_scores) / len(valid_scores))
-else:
-    avg_score = 0
+    if valid_scores:
+        avg_score = int(sum(valid_scores) / len(valid_scores))
+    else:
+        avg_score = 0
 
-db.close()
+    db.close()
 
-return templates.TemplateResponse(
-    "dashboard.html",
-    {
-        "request": request,
-        "analyses": analyses,
-        "total_scans": total_scans,
-        "avg_score": avg_score
-    }
-)
+    return templates.TemplateResponse(
+        "dashboard.html",
+        {
+            "request": request,
+            "analyses": analyses,
+            "total_scans": total_scans,
+            "avg_score": avg_score
+        }
+    )
