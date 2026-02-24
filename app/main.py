@@ -22,7 +22,6 @@ templates = Jinja2Templates(directory="app/templates")
 # ---------------- HOME ----------------
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    return RedirectResponse("/login", status_code=303)
 
     user_email = request.session.get("user")
 
@@ -31,7 +30,10 @@ def home(request: Request):
 
     return templates.TemplateResponse(
         "index.html",
-        {"request": request}
+        {
+            "request": request,
+            "user": user_email
+        }
     )
 # ---------------- REGISTER PAGE ----------------
 @app.get("/register", response_class=HTMLResponse)
@@ -167,7 +169,7 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == user_email).first()
 
     if not user:
-        return RedirectResponse("/login", status_code=303)
+        return RedirectResponse("/", status_code=303)
 
     analyses = db.query(Analysis).filter(
         Analysis.user_id == user.id
