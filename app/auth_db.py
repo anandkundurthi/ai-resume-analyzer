@@ -1,7 +1,7 @@
+from sqlalchemy import Column, Integer, String, create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 import hashlib
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
-
 DATABASE_URL = "sqlite:///./users.db"
 
 engine = create_engine(
