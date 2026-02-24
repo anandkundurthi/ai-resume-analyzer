@@ -28,7 +28,16 @@ def home(request: Request):
 
     return templates.TemplateResponse("index.html", {"request": request})
 
-# ---------------- REGISTER ----------------
+# ---------------- REGISTER PAGE ----------------
+@app.get("/register", response_class=HTMLResponse)
+def register_page(request: Request):
+    return templates.TemplateResponse(
+        "register.html",
+        {"request": request}
+    )
+
+
+# ---------------- REGISTER SUBMIT ----------------
 @app.post("/register")
 def register(
     request: Request,
@@ -36,8 +45,8 @@ def register(
     password: str = Form(...),
     db: Session = Depends(get_db)
 ):
-
     existing_user = db.query(User).filter(User.email == email).first()
+
     if existing_user:
         return templates.TemplateResponse(
             "register.html",
@@ -49,18 +58,10 @@ def register(
         hashed_password=hash_password(password)
     )
 
-    try:
-        db.add(new_user)
-        db.commit()
-    except IntegrityError:
-        db.rollback()
-        return templates.TemplateResponse(
-            "register.html",
-            {"request": request, "error": "Email already registered"}
-        )
+    db.add(new_user)
+    db.commit()
 
-    return RedirectResponse(url="/login", status_code=303)
-
+    return RedirectResponse(url="/login", status_code=303)    
 
 # ---------------- LOGIN ----------------
 @app.get("/login", response_class=HTMLResponse)
