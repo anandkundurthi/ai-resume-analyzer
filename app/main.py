@@ -1,3 +1,4 @@
+from sqlalchemy.exc import IntegrityError
 from app.utils import generate_career_suggestions
 from app.auth_db import SessionLocal, User, Analysis
 from fastapi import FastAPI, UploadFile, File, Form, Request, Depends
@@ -40,10 +41,16 @@ def register(request: Request, email: str = Form(...), password: str = Form(...)
         return templates.TemplateResponse("register.html", {"request": request, "error": "User already exists"})
 
     new_user = User(email=email, hashed_password=hash_password(password))
+
+try:
     db.add(new_user)
     db.commit()
-
-    return RedirectResponse(url="/login", status_code=303)
+except IntegrityError:
+    db.rollback()
+    return templates.TemplateResponse(
+        "register.html",
+        {"request": request, "error": "Email already registered"}
+    )
 
 
 # ---------------- LOGIN ----------------

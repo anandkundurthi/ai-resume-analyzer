@@ -5,7 +5,7 @@ from datetime import datetime
 
 
 # DATABASE
-DATABASE_URL = "sqlite:///users.db"
+DATABASE_URL = "DATABASE_URL = "sqlite:///./app/users.db""
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(bind=engine)
