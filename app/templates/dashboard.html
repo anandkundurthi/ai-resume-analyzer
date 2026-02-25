@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — ResumeAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root { --navy: #0f1e35; --navy-light: #1e3a5f; --gold: #c9a84c; --gold-light: #e8c97a; --white: #f8f6f1; --muted: #8a9bb5; --bg: #f4f6f9; --green: #16a34a; --red: #dc2626; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--navy); min-height: 100vh; }
+        nav { background: var(--navy); padding: 0 48px; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+        .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .brand-icon { width: 34px; height: 34px; background: linear-gradient(135deg, var(--gold), var(--gold-light)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .brand-name { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--white); }
+        .brand-name span { color: var(--gold); }
+        .nav-links { display: flex; align-items: center; gap: 8px; }
+        .nav-link { text-decoration: none; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; color: var(--muted); transition: all 0.2s; }
+        .nav-link:hover { color: var(--white); background: rgba(255,255,255,0.07); }
+        .nav-link.active { color: var(--white); }
+        .nav-logout { text-decoration: none; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; color: var(--navy); background: var(--gold); transition: all 0.2s; }
+        .nav-logout:hover { background: var(--gold-light); }
+        main { max-width: 1000px; margin: 0 auto; padding: 50px 24px; }
+        .page-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 36px; animation: fadeUp 0.5s ease both; }
+        .page-header h1 { font-family: 'Playfair Display', serif; font-size: 36px; color: var(--navy); margin-bottom: 4px; }
+        .page-header p { font-size: 14px; color: #8a9bb5; }
+        .btn-new { text-decoration: none; padding: 12px 22px; background: var(--navy); color: var(--white); border-radius: 10px; font-size: 14px; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
+        .btn-new:hover { background: var(--navy-light); transform: translateY(-1px); box-shadow: 0 8px 20px rgba(15,30,53,0.2); }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; animation: fadeUp 0.5s 0.1s ease both; }
+        .stat-card { background: white; border-radius: 16px; padding: 28px; border: 1px solid #e8edf5; box-shadow: 0 1px 8px rgba(15,30,53,0.04); display: flex; align-items: center; gap: 20px; }
+        .stat-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+        .icon-navy { background: rgba(15,30,53,0.08); }
+        .icon-gold { background: rgba(201,168,76,0.12); }
+        .icon-green { background: rgba(22,163,74,0.1); }
+        .stat-num { font-family: 'Playfair Display', serif; font-size: 32px; color: var(--navy); line-height: 1; margin-bottom: 4px; }
+        .stat-label { font-size: 13px; color: #8a9bb5; font-weight: 500; }
+        .table-card { background: white; border-radius: 16px; border: 1px solid #e8edf5; box-shadow: 0 1px 8px rgba(15,30,53,0.04); overflow: hidden; animation: fadeUp 0.5s 0.15s ease both; }
+        .table-header { padding: 24px 28px; border-bottom: 1px solid #f0f4f8; display: flex; justify-content: space-between; align-items: center; }
+        .table-title { font-size: 15px; font-weight: 600; color: var(--navy); }
+        .table-count { font-size: 13px; color: #8a9bb5; background: #f4f6f9; padding: 4px 12px; border-radius: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        thead th { padding: 14px 24px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: #8a9bb5; background: #fafbfc; border-bottom: 1px solid #f0f4f8; }
+        tbody tr { transition: background 0.15s; }
+        tbody tr:hover { background: #fafbfc; }
+        tbody td { padding: 18px 24px; font-size: 14px; color: #4a5568; border-bottom: 1px solid #f8fafc; vertical-align: middle; }
+        tbody tr:last-child td { border-bottom: none; }
+        .score-pill { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+        .pill-high { background: #f0fdf4; color: #16a34a; }
+        .pill-mid { background: #fefce8; color: #ca8a04; }
+        .pill-low { background: #fff0f0; color: #dc2626; }
+        .skill-mini-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+        .skill-mini { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 500; }
+        .mini-green { background: #f0fdf4; color: #16a34a; }
+        .mini-red { background: #fff0f0; color: #dc2626; }
+        .empty-table { text-align: center; padding: 60px 24px; color: #a0aec0; }
+        .empty-icon { font-size: 40px; margin-bottom: 12px; }
+        .empty-table h3 { font-size: 16px; color: #6b7a90; margin-bottom: 6px; }
+        .empty-table p { font-size: 14px; }
+        .btn-start { display: inline-block; margin-top: 16px; text-decoration: none; padding: 10px 20px; background: var(--navy); color: var(--white); border-radius: 8px; font-size: 14px; font-weight: 600; transition: all 0.2s; }
+        .btn-start:hover { background: var(--navy-light); }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+<nav>
+    <a href="/upload" class="brand"><div class="brand-icon">📄</div><div class="brand-name">Resume<span>AI</span></div></a>
+    <div class="nav-links">
+        <a href="/upload" class="nav-link">Analyze</a>
+        <a href="/dashboard" class="nav-link active">Dashboard</a>
+        <a href="/logout" class="nav-logout">Sign Out</a>
+    </div>
+</nav>
+<main>
+    <div class="page-header">
+        <div><h1>Dashboard</h1><p>Track your resume analysis history</p></div>
+        <a href="/upload" class="btn-new">+ New Analysis</a>
+    </div>
+    <div class="stats-grid">
+        <div class="stat-card"><div class="stat-icon icon-navy">📊</div><div><div class="stat-num">{{ total_scans }}</div><div class="stat-label">Total Analyses</div></div></div>
+        <div class="stat-card"><div class="stat-icon icon-gold">⭐</div><div><div class="stat-num">{{ avg_score }}%</div><div class="stat-label">Average Score</div></div></div>
+        <div class="stat-card"><div class="stat-icon icon-green">🎯</div><div>
+            <div class="stat-num">{% set high_count = namespace(value=0) %}{% for a in analyses %}{% if a.score >= 60 %}{% set high_count.value = high_count.value + 1 %}{% endif %}{% endfor %}{{ high_count.value }}</div>
+            <div class="stat-label">Strong Matches (60%+)</div>
+        </div></div>
+    </div>
+    <div class="table-card">
+        <div class="table-header">
+            <div class="table-title">Analysis History</div>
+            <div class="table-count">{{ total_scans }} record{% if total_scans != 1 %}s{% endif %}</div>
+        </div>
+        {% if analyses %}
+        <table>
+            <thead><tr><th>#</th><th>Score</th><th>Matched Skills</th><th>Missing Skills</th></tr></thead>
+            <tbody>
+                {% for a in analyses %}
+                <tr>
+                    <td style="color:#a0aec0;font-size:13px;">{{ loop.index }}</td>
+                    <td><span class="score-pill {% if a.score >= 80 %}pill-high{% elif a.score >= 60 %}pill-mid{% else %}pill-low{% endif %}">{{ a.score }}%</span></td>
+                    <td><div class="skill-mini-tags">
+                        {% if a.matched_skills %}{% for skill in a.matched_skills.split(', ')[:4] %}<span class="skill-mini mini-green">{{ skill }}</span>{% endfor %}
+                        {% if a.matched_skills.split(', ') | length > 4 %}<span class="skill-mini" style="background:#f0f4f8;color:#8a9bb5;">+{{ a.matched_skills.split(', ') | length - 4 }}</span>{% endif %}
+                        {% else %}<span style="font-size:12px;color:#a0aec0;">—</span>{% endif %}
+                    </div></td>
+                    <td><div class="skill-mini-tags">
+                        {% if a.missing_skills %}{% for skill in a.missing_skills.split(', ')[:4] %}<span class="skill-mini mini-red">{{ skill }}</span>{% endfor %}
+                        {% if a.missing_skills.split(', ') | length > 4 %}<span class="skill-mini" style="background:#f0f4f8;color:#8a9bb5;">+{{ a.missing_skills.split(', ') | length - 4 }}</span>{% endif %}
+                        {% else %}<span style="font-size:12px;color:#a0aec0;">—</span>{% endif %}
+                    </div></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-table">
+            <div class="empty-icon">📭</div>
+            <h3>No analyses yet</h3>
+            <p>Run your first resume analysis to see results here</p>
+            <a href="/upload" class="btn-start">Start Analyzing →</a>
+        </div>
+        {% endif %}
+    </div>
+</main>
+</body>
+</html>

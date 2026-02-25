@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyze Resume — ResumeAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root { --navy: #0f1e35; --navy-light: #1e3a5f; --gold: #c9a84c; --gold-light: #e8c97a; --white: #f8f6f1; --muted: #8a9bb5; --bg: #f4f6f9; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--navy); min-height: 100vh; }
+        nav { background: var(--navy); padding: 0 48px; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+        .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .brand-icon { width: 34px; height: 34px; background: linear-gradient(135deg, var(--gold), var(--gold-light)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .brand-name { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--white); }
+        .brand-name span { color: var(--gold); }
+        .nav-links { display: flex; align-items: center; gap: 8px; }
+        .nav-link { text-decoration: none; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; color: var(--muted); transition: all 0.2s; }
+        .nav-link:hover { color: var(--white); background: rgba(255,255,255,0.07); }
+        .nav-link.active { color: var(--white); }
+        .nav-logout { text-decoration: none; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; color: var(--navy); background: var(--gold); transition: all 0.2s; }
+        .nav-logout:hover { background: var(--gold-light); }
+        main { max-width: 860px; margin: 0 auto; padding: 60px 24px; }
+        .page-header { text-align: center; margin-bottom: 48px; animation: fadeUp 0.5s ease both; }
+        .page-header .badge { display: inline-block; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.3); color: #9a6f1e; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; padding: 6px 14px; border-radius: 20px; margin-bottom: 16px; }
+        .page-header h1 { font-family: 'Playfair Display', serif; font-size: 42px; color: var(--navy); margin-bottom: 12px; }
+        .page-header p { font-size: 16px; color: #6b7a90; font-weight: 300; }
+        .card { background: white; border-radius: 16px; padding: 36px; box-shadow: 0 2px 20px rgba(15,30,53,0.06); border: 1px solid #e8edf5; animation: fadeUp 0.5s 0.1s ease both; }
+        .card-title { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: #4a5568; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .card-title::after { content: ''; flex: 1; height: 1px; background: #e8edf5; }
+        .upload-zone { border: 2px dashed #d1dce8; border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.2s ease; background: #f8fafc; position: relative; margin-bottom: 32px; }
+        .upload-zone:hover { border-color: var(--gold); background: rgba(201,168,76,0.04); }
+        .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+        .upload-icon { font-size: 36px; margin-bottom: 12px; }
+        .upload-zone h3 { font-size: 16px; font-weight: 600; color: var(--navy); margin-bottom: 6px; }
+        .upload-zone p { font-size: 13px; color: #8a9bb5; }
+        .file-name { display: none; margin-top: 12px; font-size: 13px; color: var(--gold); font-weight: 500; }
+        textarea { width: 100%; padding: 16px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--navy); background: #fafbfc; resize: vertical; min-height: 180px; transition: all 0.2s; outline: none; line-height: 1.6; }
+        textarea:focus { border-color: var(--gold); background: white; box-shadow: 0 0 0 4px rgba(201,168,76,0.08); }
+        .char-count { text-align: right; font-size: 12px; color: #a0aec0; margin-top: 6px; }
+        .error-box { background: #fff0f0; border: 1px solid #fca5a5; border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #dc2626; margin-bottom: 24px; }
+        .btn-analyze { width: 100%; padding: 16px; background: var(--navy); color: var(--white); border: none; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 28px; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 8px; animation: fadeUp 0.5s 0.2s ease both; }
+        .btn-analyze:hover { background: var(--navy-light); transform: translateY(-2px); box-shadow: 0 10px 30px rgba(15,30,53,0.2); }
+        .loading { display: none; }
+        .tips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 32px; animation: fadeUp 0.5s 0.3s ease both; }
+        .tip { background: white; border-radius: 12px; padding: 20px; border: 1px solid #e8edf5; box-shadow: 0 1px 8px rgba(15,30,53,0.04); }
+        .tip-icon { font-size: 22px; margin-bottom: 10px; }
+        .tip h4 { font-size: 13px; font-weight: 600; color: var(--navy); margin-bottom: 4px; }
+        .tip p { font-size: 12px; color: #8a9bb5; line-height: 1.5; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+<nav>
+    <a href="/upload" class="brand"><div class="brand-icon">📄</div><div class="brand-name">Resume<span>AI</span></div></a>
+    <div class="nav-links">
+        <a href="/upload" class="nav-link active">Analyze</a>
+        <a href="/dashboard" class="nav-link">Dashboard</a>
+        <a href="/logout" class="nav-logout">Sign Out</a>
+    </div>
+</nav>
+<main>
+    <div class="page-header">
+        <div class="badge">AI-Powered Analysis</div>
+        <h1>Analyze Your Resume</h1>
+        <p>Upload your resume and paste a job description to get your match score</p>
+    </div>
+    {% if error %}<div class="error-box">⚠ {{ error }}</div>{% endif %}
+    <form action="/analyze/" method="post" enctype="multipart/form-data" id="analyzeForm">
+        <div class="card">
+            <div class="card-title">📎 Resume Upload</div>
+            <div class="upload-zone" id="uploadZone">
+                <input type="file" name="resume" accept=".pdf" required id="fileInput">
+                <div class="upload-icon">📄</div>
+                <h3>Drop your resume here</h3>
+                <p>or click to browse — PDF format only</p>
+                <div class="file-name" id="fileName"></div>
+            </div>
+            <div class="card-title">📋 Job Description</div>
+            <textarea name="job_description" placeholder="Paste the full job description here..." required id="jdText"></textarea>
+            <div class="char-count"><span id="charCount">0</span> characters</div>
+        </div>
+        <button type="submit" class="btn-analyze" id="submitBtn">
+            <span class="normal">Run Analysis →</span>
+            <span class="loading">Analyzing... please wait</span>
+        </button>
+    </form>
+    <div class="tips">
+        <div class="tip"><div class="tip-icon">🎯</div><h4>Be Specific</h4><p>Paste the complete job description for the most accurate skill matching.</p></div>
+        <div class="tip"><div class="tip-icon">📝</div><h4>Clean PDF</h4><p>Use a text-based PDF, not a scanned image, for best extraction results.</p></div>
+        <div class="tip"><div class="tip-icon">🔁</div><h4>Iterate</h4><p>Update your resume based on the gaps and re-analyze to track improvement.</p></div>
+    </div>
+</main>
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const fileName = document.getElementById('fileName');
+    const uploadZone = document.getElementById('uploadZone');
+    const jdText = document.getElementById('jdText');
+    const charCount = document.getElementById('charCount');
+    const submitBtn = document.getElementById('submitBtn');
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files[0]) {
+            fileName.textContent = '✓ ' + fileInput.files[0].name;
+            fileName.style.display = 'block';
+            uploadZone.style.borderColor = '#c9a84c';
+            uploadZone.style.background = 'rgba(201,168,76,0.05)';
+        }
+    });
+    jdText.addEventListener('input', () => { charCount.textContent = jdText.value.length; });
+    document.getElementById('analyzeForm').addEventListener('submit', () => {
+        submitBtn.querySelector('.normal').style.display = 'none';
+        submitBtn.querySelector('.loading').style.display = 'inline';
+        submitBtn.disabled = true;
+    });
+    uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        if (e.dataTransfer.files[0]) {
+            fileInput.files = e.dataTransfer.files;
+            fileName.textContent = '✓ ' + e.dataTransfer.files[0].name;
+            fileName.style.display = 'block';
+        }
+    });
+</script>
+</body>
+</html>
