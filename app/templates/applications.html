@@ -9,7 +9,7 @@
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root { --navy: #0f1e35; --navy-light: #1e3a5f; --gold: #c9a84c; --gold-light: #e8c97a; --white: #f8f6f1; --muted: #8a9bb5; --bg: #f4f6f9; }
         body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--navy); min-height: 100vh; }
-        nav { background: var(--navy); padding: 0 48px; min-height: 64px; display: flex; align-items: center; justify-content: space-between; }
+        nav { background: var(--navy); padding: 10px 24px; min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
         .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
         .brand-icon { width: 34px; height: 34px; background: linear-gradient(135deg, var(--gold), var(--gold-light)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
         .brand-name { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--white); }
@@ -38,6 +38,14 @@
         .offer { background: #dcfce7; color: #166534; }
         .rejected { background: #fee2e2; color: #b91c1c; }
         @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
+        @media (max-width: 720px) {
+            nav { padding: 10px 14px; }
+            main { padding: 34px 14px; }
+            .header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .card { padding: 18px; }
+            .card:last-child { overflow-x: auto; }
+            table { min-width: 700px; }
+        }
     </style>
 </head>
 <body>
