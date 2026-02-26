@@ -1,7 +1,8 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, create_engine
+from sqlalchemy import Column, Integer, String, ForeignKey, create_engine, text
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
 import hashlib
+
 DATABASE_URL = "sqlite:///./users.db"
 
 engine = create_engine(
@@ -28,6 +29,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
+    linkedin_url = Column(String, nullable=True)
 
 
 # ANALYSIS MODEL
@@ -47,14 +49,15 @@ class Analysis(Base):
 Base.metadata.create_all(bind=engine)
 
 
-# UTILITY FUNCTIONS
+def ensure_schema():
+    with engine.connect() as conn:
+        columns = {row[1] for row in conn.execute(text("PRAGMA table_info(users)")).fetchall()}
+        if "linkedin_url" not in columns:
+            conn.execute(text("ALTER TABLE users ADD COLUMN linkedin_url VARCHAR"))
+            conn.commit()
 
-def hash_password(password: str):
-    return hashlib.sha256(password.encode()).hexdigest()
 
-
-def verify_password(plain_password: str, hashed_password: str):
-    return hashlib.sha256(plain_password.encode()).hexdigest() == hashed_password
+ensure_schema()
 
 def get_db():
     db = SessionLocal()
@@ -62,8 +65,3 @@ def get_db():
         yield db
     finally:
         db.close()
-
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-Base.metadata.create_all(bind=engine)

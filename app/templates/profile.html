@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Settings — ResumeAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root { --navy: #0f1e35; --navy-light: #1e3a5f; --gold: #c9a84c; --gold-light: #e8c97a; --white: #f8f6f1; --muted: #8a9bb5; --bg: #f4f6f9; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--navy); min-height: 100vh; }
+        nav { background: var(--navy); padding: 0 48px; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+        .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .brand-icon { width: 34px; height: 34px; background: linear-gradient(135deg, var(--gold), var(--gold-light)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .brand-name { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--white); }
+        .brand-name span { color: var(--gold); }
+        .nav-links { display: flex; align-items: center; gap: 8px; }
+        .nav-link { text-decoration: none; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; color: var(--muted); transition: all 0.2s; }
+        .nav-link:hover { color: var(--white); background: rgba(255,255,255,0.07); }
+        .nav-link.active { color: var(--white); }
+        .nav-logout { text-decoration: none; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; color: var(--navy); background: var(--gold); transition: all 0.2s; }
+        .nav-logout:hover { background: var(--gold-light); }
+        main { max-width: 760px; margin: 0 auto; padding: 60px 24px; }
+        .card { background: white; border-radius: 16px; padding: 32px; border: 1px solid #e8edf5; box-shadow: 0 1px 8px rgba(15,30,53,0.04); }
+        h1 { font-family: 'Playfair Display', serif; font-size: 34px; margin-bottom: 8px; }
+        p { color: #6b7a90; margin-bottom: 28px; }
+        label { display: block; font-size: 12px; font-weight: 600; color: #4a5568; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+        input { width: 100%; padding: 14px 16px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--navy); background: #fafbfc; transition: all 0.2s ease; outline: none; margin-bottom: 18px; }
+        input:focus { border-color: var(--gold); background: #fff; box-shadow: 0 0 0 4px rgba(201,168,76,0.1); }
+        .btn-primary { width: 100%; padding: 14px; background: var(--navy); color: var(--white); border: none; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; }
+        .btn-primary:hover { background: var(--navy-light); }
+        .status { border-radius: 10px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; }
+        .status.ok { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+        .status.error { background: #fff0f0; border: 1px solid #fca5a5; color: #dc2626; }
+    </style>
+</head>
+<body>
+<nav>
+    <a href="/upload" class="brand"><div class="brand-icon">📄</div><div class="brand-name">Resume<span>AI</span></div></a>
+    <div class="nav-links">
+        <a href="/upload" class="nav-link">Analyze</a>
+        <a href="/dashboard" class="nav-link">Dashboard</a>
+        <a href="/profile" class="nav-link active">Profile</a>
+        {% if linkedin_url %}<a href="{{ linkedin_url }}" class="nav-link" target="_blank" rel="noopener noreferrer">LinkedIn</a>{% endif %}
+        <a href="/logout" class="nav-logout">Sign Out</a>
+    </div>
+</nav>
+<main>
+    <div class="card">
+        <h1>Profile Settings</h1>
+        <p>Add your LinkedIn URL. Your own link will be shown in the app after login.</p>
+        {% if saved %}<div class="status ok">LinkedIn profile saved successfully.</div>{% endif %}
+        {% if error %}<div class="status error">{{ error }}</div>{% endif %}
+        <form method="post">
+            <label>LinkedIn Profile URL</label>
+            <input type="url" name="linkedin_url" placeholder="https://www.linkedin.com/in/your-id" value="{{ linkedin_url or '' }}">
+            <button type="submit" class="btn-primary">Save Profile</button>
+        </form>
+    </div>
+</main>
+</body>
+</html>

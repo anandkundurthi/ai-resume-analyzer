@@ -20,6 +20,19 @@ templates = Jinja2Templates(directory="app/templates")
 
 ALL_SKILLS = skills["technical"] + skills["soft_skills"] + skills["tools"] + skills["business"]
 
+
+def normalize_linkedin_url(url: str):
+    if not url:
+        return None
+    cleaned = url.strip()
+    if not cleaned:
+        return None
+    if "linkedin.com" not in cleaned.lower():
+        return None
+    if not cleaned.startswith("http://") and not cleaned.startswith("https://"):
+        cleaned = f"https://{cleaned}"
+    return cleaned
+
 @app.get("/")
 def root():
     return RedirectResponse("/login", status_code=303)
@@ -34,18 +47,28 @@ def login(request: Request, email: str = Form(...), password: str = Form(...), d
     if not user or password != user.hashed_password:
         return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"})
     request.session["user"] = user.email
+    request.session["linkedin_url"] = user.linkedin_url
     return RedirectResponse("/upload", status_code=303)
 
 @app.get("/register", response_class=HTMLResponse)
 def register_page(request: Request):
-    return templates.TemplateResponse("register.html", {"request": request})
+    return templates.TemplateResponse("register.html", {"request": request, "linkedin_url": ""})
 
 @app.post("/register")
-def register(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+def register(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...),
+    linkedin_url: str = Form(""),
+    db: Session = Depends(get_db),
+):
     existing_user = db.query(User).filter(User.email == email).first()
     if existing_user:
-        return templates.TemplateResponse("register.html", {"request": request, "error": "User already exists"})
-    new_user = User(email=email, hashed_password=password)
+        return templates.TemplateResponse("register.html", {"request": request, "error": "User already exists", "linkedin_url": linkedin_url})
+    normalized_linkedin = normalize_linkedin_url(linkedin_url)
+    if linkedin_url.strip() and not normalized_linkedin:
+        return templates.TemplateResponse("register.html", {"request": request, "error": "Enter a valid LinkedIn URL", "linkedin_url": linkedin_url})
+    new_user = User(email=email, hashed_password=password, linkedin_url=normalized_linkedin)
     db.add(new_user)
     db.commit()
     return RedirectResponse("/login", status_code=303)
@@ -54,7 +77,7 @@ def register(request: Request, email: str = Form(...), password: str = Form(...)
 def upload_page(request: Request):
     if not request.session.get("user"):
         return RedirectResponse("/login", status_code=303)
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse("index.html", {"request": request, "linkedin_url": request.session.get("linkedin_url")})
 
 @app.post("/analyze/", response_class=HTMLResponse)
 async def analyze_resume(request: Request, resume: UploadFile = File(...), job_description: str = Form(...), db: Session = Depends(get_db)):
@@ -65,11 +88,11 @@ async def analyze_resume(request: Request, resume: UploadFile = File(...), job_d
     try:
         resume_text = extract_text_from_upload(resume)
     except ValueError as e:
-        return templates.TemplateResponse("index.html", {"request": request, "error": str(e)})
+        return templates.TemplateResponse("index.html", {"request": request, "error": str(e), "linkedin_url": request.session.get("linkedin_url")})
     except Exception:
-        return templates.TemplateResponse("index.html", {"request": request, "error": "Could not read this document. Try another file format or a cleaner document."})
+        return templates.TemplateResponse("index.html", {"request": request, "error": "Could not read this document. Try another file format or a cleaner document.", "linkedin_url": request.session.get("linkedin_url")})
     if not resume_text:
-        return templates.TemplateResponse("index.html", {"request": request, "error": "Could not read document content"})
+        return templates.TemplateResponse("index.html", {"request": request, "error": "Could not read document content", "linkedin_url": request.session.get("linkedin_url")})
     cleaned_resume = clean_text(resume_text)
     cleaned_jd = clean_text(job_description)
     similarity_score, matched_skills, missing_skills = calculate_similarity(cleaned_resume, cleaned_jd, ALL_SKILLS)
@@ -95,6 +118,7 @@ async def analyze_resume(request: Request, resume: UploadFile = File(...), job_d
             "suggestions": suggestions,
             "action_plan": action_plan,
             "user": user_email,
+            "linkedin_url": request.session.get("linkedin_url"),
         },
     )
 
@@ -109,7 +133,43 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     analyses = db.query(Analysis).filter(Analysis.user_id == user.id).all()
     total_scans = len(analyses)
     avg_score = int(sum(a.score or 0 for a in analyses) / total_scans) if total_scans > 0 else 0
-    return templates.TemplateResponse("dashboard.html", {"request": request, "analyses": analyses, "total_scans": total_scans, "avg_score": avg_score, "user": user_email})
+    return templates.TemplateResponse(
+        "dashboard.html",
+        {
+            "request": request,
+            "analyses": analyses,
+            "total_scans": total_scans,
+            "avg_score": avg_score,
+            "user": user_email,
+            "linkedin_url": user.linkedin_url,
+        },
+    )
+
+
+@app.get("/profile", response_class=HTMLResponse)
+def profile_page(request: Request, db: Session = Depends(get_db)):
+    if not request.session.get("user"):
+        return RedirectResponse("/login", status_code=303)
+    user = db.query(User).filter(User.email == request.session["user"]).first()
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    return templates.TemplateResponse("profile.html", {"request": request, "linkedin_url": user.linkedin_url, "saved": False})
+
+
+@app.post("/profile", response_class=HTMLResponse)
+def update_profile(request: Request, linkedin_url: str = Form(""), db: Session = Depends(get_db)):
+    if not request.session.get("user"):
+        return RedirectResponse("/login", status_code=303)
+    user = db.query(User).filter(User.email == request.session["user"]).first()
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    normalized_linkedin = normalize_linkedin_url(linkedin_url)
+    if linkedin_url.strip() and not normalized_linkedin:
+        return templates.TemplateResponse("profile.html", {"request": request, "linkedin_url": user.linkedin_url, "saved": False, "error": "Enter a valid LinkedIn URL"})
+    user.linkedin_url = normalized_linkedin
+    db.commit()
+    request.session["linkedin_url"] = user.linkedin_url
+    return templates.TemplateResponse("profile.html", {"request": request, "linkedin_url": user.linkedin_url, "saved": True})
 
 @app.get("/logout")
 def logout(request: Request):
