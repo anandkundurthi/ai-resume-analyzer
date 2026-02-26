@@ -5,3 +5,5 @@ python-multipart
 sqlalchemy
 itsdangerous
 PyPDF2
+reportlab
+python-docx

@@ -6,10 +6,12 @@ from app.utils import (
     generate_action_plan,
     build_report_text,
     build_ats_resume_text,
+    build_ats_resume_pdf_bytes,
+    build_ats_resume_docx_bytes,
 )
 from app.skill_db import skills
 from fastapi import UploadFile, File, FastAPI, Request, Form, Depends
-from fastapi.responses import HTMLResponse, RedirectResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, PlainTextResponse, Response
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy.orm import Session
@@ -241,7 +243,7 @@ def generate_ats_resume(
     resume_text = build_ats_resume_text(form_data)
     safe_name = (full_name.strip() or "candidate").replace(" ", "_")
     request.session["ats_resume"] = {
-        "filename": f"{safe_name.lower()}_ats_resume.txt",
+        "base_filename": f"{safe_name.lower()}_ats_resume",
         "text": resume_text,
     }
     return templates.TemplateResponse(
@@ -263,5 +265,40 @@ def download_ats_resume(request: Request):
     if not ats_resume:
         return RedirectResponse("/ats-resume", status_code=303)
     response = PlainTextResponse(ats_resume.get("text", ""), media_type="text/plain")
-    response.headers["Content-Disposition"] = f'attachment; filename="{ats_resume.get("filename", "ats_resume.txt")}"'
+    response.headers["Content-Disposition"] = f'attachment; filename="{ats_resume.get("base_filename", "ats_resume")}.txt"'
+    return response
+
+
+@app.get("/download-ats-resume-pdf")
+def download_ats_resume_pdf(request: Request):
+    if not request.session.get("user"):
+        return RedirectResponse("/login", status_code=303)
+    ats_resume = request.session.get("ats_resume")
+    if not ats_resume:
+        return RedirectResponse("/ats-resume", status_code=303)
+    try:
+        pdf_bytes = build_ats_resume_pdf_bytes(ats_resume.get("text", ""))
+    except ImportError:
+        return PlainTextResponse("PDF export dependency missing. Install requirements and retry.", status_code=500)
+    response = Response(content=pdf_bytes, media_type="application/pdf")
+    response.headers["Content-Disposition"] = f'attachment; filename="{ats_resume.get("base_filename", "ats_resume")}.pdf"'
+    return response
+
+
+@app.get("/download-ats-resume-docx")
+def download_ats_resume_docx(request: Request):
+    if not request.session.get("user"):
+        return RedirectResponse("/login", status_code=303)
+    ats_resume = request.session.get("ats_resume")
+    if not ats_resume:
+        return RedirectResponse("/ats-resume", status_code=303)
+    try:
+        docx_bytes = build_ats_resume_docx_bytes(ats_resume.get("text", ""))
+    except ImportError:
+        return PlainTextResponse("DOCX export dependency missing. Install requirements and retry.", status_code=500)
+    response = Response(
+        content=docx_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
+    response.headers["Content-Disposition"] = f'attachment; filename="{ats_resume.get("base_filename", "ats_resume")}.docx"'
     return response

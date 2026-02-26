@@ -2,6 +2,7 @@ from PyPDF2 import PdfReader
 from datetime import datetime
 import io
 import re
+import textwrap
 import zipfile
 from xml.etree import ElementTree as ET
 
@@ -301,3 +302,55 @@ def build_ats_resume_text(data):
         lines.append("- Add relevant certifications or leave this section out if not applicable.")
 
     return "\n".join(lines)
+
+
+def build_ats_resume_pdf_bytes(resume_text):
+    from reportlab.lib.pagesizes import LETTER
+    from reportlab.pdfgen import canvas
+
+    output = io.BytesIO()
+    pdf = canvas.Canvas(output, pagesize=LETTER)
+    width, height = LETTER
+    x_pos = 50
+    y_pos = height - 50
+
+    for raw_line in resume_text.splitlines():
+        line = raw_line.rstrip()
+        wrapped_lines = textwrap.wrap(line, width=95) if line else [""]
+        for wrapped in wrapped_lines:
+            if y_pos < 50:
+                pdf.showPage()
+                y_pos = height - 50
+            if line.isupper() and len(line) < 60:
+                pdf.setFont("Helvetica-Bold", 11)
+            else:
+                pdf.setFont("Helvetica", 11)
+            pdf.drawString(x_pos, y_pos, wrapped)
+            y_pos -= 14
+
+    pdf.save()
+    output.seek(0)
+    return output.getvalue()
+
+
+def build_ats_resume_docx_bytes(resume_text):
+    from docx import Document
+
+    doc = Document()
+    for raw_line in resume_text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            doc.add_paragraph("")
+            continue
+        if line.isupper() and len(line) < 60:
+            title = doc.add_paragraph()
+            title.add_run(line).bold = True
+        elif line.startswith("- "):
+            doc.add_paragraph(line[2:], style="List Bullet")
+        else:
+            doc.add_paragraph(line)
+
+    output = io.BytesIO()
+    doc.save(output)
+    output.seek(0)
+    return output.getvalue()
