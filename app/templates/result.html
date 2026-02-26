@@ -67,6 +67,16 @@
         .plan-block h4 { font-size: 13px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.6px; color: #6b7a90; }
         .plan-list { padding-left: 18px; }
         .plan-list li { font-size: 13px; color: #4a5568; line-height: 1.6; margin-bottom: 4px; }
+        .audit-card { background: white; border-radius: 16px; padding: 28px; border: 1px solid #e8edf5; box-shadow: 0 1px 8px rgba(15,30,53,0.04); margin-bottom: 28px; }
+        .audit-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+        .audit-head h3 { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--navy); }
+        .audit-score { background: #eef6ff; color: #1d4ed8; border: 1px solid #bfdbfe; border-radius: 20px; padding: 6px 12px; font-size: 12px; font-weight: 700; }
+        .audit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+        .audit-item { font-size: 13px; color: #4a5568; padding: 8px 10px; border-radius: 10px; border: 1px solid #edf2f7; background: #fbfcfe; }
+        .audit-ok { color: #166534; }
+        .audit-fail { color: #b91c1c; }
+        .audit-suggestions { padding-left: 18px; }
+        .audit-suggestions li { font-size: 13px; color: #5b6778; margin-bottom: 4px; }
         .actions { display: flex; gap: 12px; flex-wrap: wrap; animation: fadeUp 0.5s 0.25s ease both; }
         .btn { text-decoration: none; padding: 14px 24px; border-radius: 12px; font-size: 14px; font-weight: 600; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; }
         .btn-primary { background: var(--navy); color: var(--white); flex: 1; justify-content: center; }
@@ -79,6 +89,7 @@
         .btn-danger:hover { background: var(--red-bg); transform: translateY(-1px); }
         @media (max-width: 800px) {
             .plan-grid { grid-template-columns: 1fr; }
+            .audit-grid { grid-template-columns: 1fr; }
         }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -180,6 +191,28 @@
                 </ol>
             </div>
         </div>
+    </div>
+    <div class="audit-card">
+        <div class="audit-head">
+            <h3>ATS Quality Audit</h3>
+            <span class="audit-score">{{ quality_audit.score }}% quality</span>
+        </div>
+        <div class="audit-grid">
+            {% for check in quality_audit.checks %}
+            <div class="audit-item {% if check.passed %}audit-ok{% else %}audit-fail{% endif %}">
+                {% if check.passed %}✓{% else %}✗{% endif %} {{ check.label }}
+            </div>
+            {% endfor %}
+        </div>
+        {% if quality_audit.suggestions %}
+        <ol class="audit-suggestions">
+            {% for item in quality_audit.suggestions %}
+            <li>{{ item }}</li>
+            {% endfor %}
+        </ol>
+        {% else %}
+        <div class="audit-item audit-ok">Great structure for ATS parsing. Keep tailoring keywords per job.</div>
+        {% endif %}
     </div>
     <div class="actions">
         <a href="/download-report" class="btn btn-tertiary">⬇ Download Report</a>

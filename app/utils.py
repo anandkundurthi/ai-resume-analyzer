@@ -220,6 +220,43 @@ def build_report_text(user_email, score, matched_skills, missing_skills, action_
     return "\n".join(lines)
 
 
+def analyze_resume_quality(resume_text):
+    text = resume_text or ""
+    text_lower = text.lower()
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+
+    checks = []
+
+    has_email = bool(re.search(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", text))
+    checks.append({"label": "Email present", "passed": has_email})
+
+    has_phone = bool(re.search(r"(\+\d{1,3}[\s-]?)?(\(?\d{3}\)?[\s-]?)\d{3}[\s-]?\d{4}", text))
+    checks.append({"label": "Phone number present", "passed": has_phone})
+
+    has_linkedin = "linkedin.com/in/" in text_lower
+    checks.append({"label": "LinkedIn profile included", "passed": has_linkedin})
+
+    has_github = "github.com/" in text_lower
+    checks.append({"label": "GitHub/portfolio link included", "passed": has_github})
+
+    has_numbers = bool(re.search(r"\d+%|\d+\+|\$\d+|\d+\s*(users|projects|clients|months|years)", text_lower))
+    checks.append({"label": "Quantified impact metrics", "passed": has_numbers})
+
+    action_verbs = {"built", "developed", "implemented", "designed", "optimized", "led", "improved", "delivered", "automated", "created"}
+    bullet_lines = [line.lower() for line in lines if line.startswith(("-", "*", "•"))]
+    has_action_verbs = any(any(verb in line for verb in action_verbs) for line in bullet_lines)
+    checks.append({"label": "Action-oriented bullet points", "passed": has_action_verbs})
+
+    has_sections = ("experience" in text_lower) and ("skills" in text_lower)
+    checks.append({"label": "Core sections (Skills + Experience)", "passed": has_sections})
+
+    passed_count = sum(1 for item in checks if item["passed"])
+    score = int(round((passed_count / len(checks)) * 100))
+
+    suggestions = [f"Add: {item['label']}" for item in checks if not item["passed"]]
+    return {"score": score, "checks": checks, "suggestions": suggestions}
+
+
 def parse_multiline_items(raw_text):
     if not raw_text:
         return []

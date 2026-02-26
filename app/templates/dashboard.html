@@ -26,12 +26,13 @@
         .page-header p { font-size: 14px; color: #8a9bb5; }
         .btn-new { text-decoration: none; padding: 12px 22px; background: var(--navy); color: var(--white); border-radius: 10px; font-size: 14px; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
         .btn-new:hover { background: var(--navy-light); transform: translateY(-1px); box-shadow: 0 8px 20px rgba(15,30,53,0.2); }
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; animation: fadeUp 0.5s 0.1s ease both; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; animation: fadeUp 0.5s 0.1s ease both; }
         .stat-card { background: white; border-radius: 16px; padding: 28px; border: 1px solid #e8edf5; box-shadow: 0 1px 8px rgba(15,30,53,0.04); display: flex; align-items: center; gap: 20px; }
         .stat-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
         .icon-navy { background: rgba(15,30,53,0.08); }
         .icon-gold { background: rgba(201,168,76,0.12); }
         .icon-green { background: rgba(22,163,74,0.1); }
+        .icon-blue { background: rgba(59,130,246,0.12); }
         .stat-num { font-family: 'Playfair Display', serif; font-size: 32px; color: var(--navy); line-height: 1; margin-bottom: 4px; }
         .stat-label { font-size: 13px; color: #8a9bb5; font-weight: 500; }
         .table-card { background: white; border-radius: 16px; border: 1px solid #e8edf5; box-shadow: 0 1px 8px rgba(15,30,53,0.04); overflow: hidden; animation: fadeUp 0.5s 0.15s ease both; }
@@ -58,6 +59,7 @@
         .empty-table p { font-size: 14px; }
         .btn-start { display: inline-block; margin-top: 16px; text-decoration: none; padding: 10px 20px; background: var(--navy); color: var(--white); border-radius: 8px; font-size: 14px; font-weight: 600; transition: all 0.2s; }
         .btn-start:hover { background: var(--navy-light); }
+        @media (max-width: 980px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
@@ -86,6 +88,12 @@
         <div class="stat-card"><div class="stat-icon icon-green">🎯</div><div>
             <div class="stat-num">{% set high_count = namespace(value=0) %}{% for a in analyses %}{% if a.score >= 60 %}{% set high_count.value = high_count.value + 1 %}{% endif %}{% endfor %}{{ high_count.value }}</div>
             <div class="stat-label">Strong Matches (60%+)</div>
+        </div></div>
+        <div class="stat-card"><div class="stat-icon icon-blue">📈</div><div>
+            <div class="stat-num">
+                {% if score_change > 0 %}+{% endif %}{{ score_change }}%
+            </div>
+            <div class="stat-label">Last Change ({{ last_score }}%)</div>
         </div></div>
     </div>
     <div class="table-card">

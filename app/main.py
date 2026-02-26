@@ -5,6 +5,7 @@ from app.utils import (
     calculate_similarity,
     generate_action_plan,
     build_report_text,
+    analyze_resume_quality,
     build_ats_resume_text,
     build_ats_resume_pdf_bytes,
     build_ats_resume_docx_bytes,
@@ -108,6 +109,7 @@ async def analyze_resume(request: Request, resume: UploadFile = File(...), job_d
     cleaned_resume = clean_text(resume_text)
     cleaned_jd = clean_text(job_description)
     similarity_score, matched_skills, missing_skills = calculate_similarity(cleaned_resume, cleaned_jd, ALL_SKILLS)
+    quality_audit = analyze_resume_quality(resume_text)
     suggestions = generate_career_suggestions(similarity_score, missing_skills)
     action_plan = generate_action_plan(similarity_score, matched_skills, missing_skills)
     report_text = build_report_text(user_email, similarity_score, matched_skills, missing_skills, action_plan)
@@ -129,6 +131,7 @@ async def analyze_resume(request: Request, resume: UploadFile = File(...), job_d
             "missing": missing_skills,
             "suggestions": suggestions,
             "action_plan": action_plan,
+            "quality_audit": quality_audit,
             "user": user_email,
             "linkedin_url": request.session.get("linkedin_url"),
         },
@@ -145,6 +148,10 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     analyses = db.query(Analysis).filter(Analysis.user_id == user.id).all()
     total_scans = len(analyses)
     avg_score = int(sum(a.score or 0 for a in analyses) / total_scans) if total_scans > 0 else 0
+    ordered = sorted(analyses, key=lambda a: a.id)
+    last_score = int(ordered[-1].score or 0) if ordered else 0
+    prev_score = int(ordered[-2].score or 0) if len(ordered) > 1 else last_score
+    score_change = last_score - prev_score if len(ordered) > 1 else 0
     return templates.TemplateResponse(
         "dashboard.html",
         {
@@ -152,6 +159,8 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
             "analyses": analyses,
             "total_scans": total_scans,
             "avg_score": avg_score,
+            "last_score": last_score,
+            "score_change": score_change,
             "user": user_email,
             "linkedin_url": user.linkedin_url,
         },
