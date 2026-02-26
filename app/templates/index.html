@@ -64,9 +64,11 @@
     <div class="nav-links">
         <a href="/upload" class="nav-link active">Analyze</a>
         <a href="/dashboard" class="nav-link">Dashboard</a>
+        {% if role != "hr" %}
         <a href="/applications" class="nav-link">Applications</a>
         <a href="/ats-resume" class="nav-link">ATS Resume</a>
         <a href="/cover-letter" class="nav-link">Cover Letter</a>
+        {% endif %}
         <a href="/profile" class="nav-link">Profile</a>
         {% if linkedin_url %}
         <a href="{{ linkedin_url }}" class="nav-link" target="_blank" rel="noopener noreferrer">LinkedIn</a>
@@ -77,8 +79,13 @@
 <main>
     <div class="page-header">
         <div class="badge">AI-Powered Analysis</div>
+        {% if role == "hr" %}
+        <h1>Analyze Candidate Resume</h1>
+        <p>Upload a candidate resume and compare it against your job description</p>
+        {% else %}
         <h1>Analyze Your Resume</h1>
         <p>Upload your resume and paste a job description to get your match score</p>
+        {% endif %}
     </div>
     {% if error %}<div class="error-box">⚠ {{ error }}</div>{% endif %}
     <form action="/analyze/" method="post" enctype="multipart/form-data" id="analyzeForm">

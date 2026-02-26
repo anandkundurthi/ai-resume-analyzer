@@ -39,6 +39,16 @@ def normalize_linkedin_url(url: str):
         cleaned = f"https://{cleaned}"
     return cleaned
 
+
+def get_session_role(request: Request):
+    return request.session.get("role", "job_seeker")
+
+
+def hr_restricted_redirect(request: Request):
+    if get_session_role(request) == "hr":
+        return RedirectResponse("/dashboard", status_code=303)
+    return None
+
 @app.get("/")
 def root():
     return RedirectResponse("/login", status_code=303)
@@ -178,7 +188,10 @@ def register_hr(
 def upload_page(request: Request):
     if not request.session.get("user"):
         return RedirectResponse("/login", status_code=303)
-    return templates.TemplateResponse("index.html", {"request": request, "linkedin_url": request.session.get("linkedin_url")})
+    return templates.TemplateResponse(
+        "index.html",
+        {"request": request, "linkedin_url": request.session.get("linkedin_url"), "role": get_session_role(request)},
+    )
 
 @app.post("/analyze/", response_class=HTMLResponse)
 async def analyze_resume(request: Request, resume: UploadFile = File(...), job_description: str = Form(...), db: Session = Depends(get_db)):
@@ -189,11 +202,25 @@ async def analyze_resume(request: Request, resume: UploadFile = File(...), job_d
     try:
         resume_text = extract_text_from_upload(resume)
     except ValueError as e:
-        return templates.TemplateResponse("index.html", {"request": request, "error": str(e), "linkedin_url": request.session.get("linkedin_url")})
+        return templates.TemplateResponse(
+            "index.html",
+            {"request": request, "error": str(e), "linkedin_url": request.session.get("linkedin_url"), "role": get_session_role(request)},
+        )
     except Exception:
-        return templates.TemplateResponse("index.html", {"request": request, "error": "Could not read this document. Try another file format or a cleaner document.", "linkedin_url": request.session.get("linkedin_url")})
+        return templates.TemplateResponse(
+            "index.html",
+            {
+                "request": request,
+                "error": "Could not read this document. Try another file format or a cleaner document.",
+                "linkedin_url": request.session.get("linkedin_url"),
+                "role": get_session_role(request),
+            },
+        )
     if not resume_text:
-        return templates.TemplateResponse("index.html", {"request": request, "error": "Could not read document content", "linkedin_url": request.session.get("linkedin_url")})
+        return templates.TemplateResponse(
+            "index.html",
+            {"request": request, "error": "Could not read document content", "linkedin_url": request.session.get("linkedin_url"), "role": get_session_role(request)},
+        )
     cleaned_resume = clean_text(resume_text)
     cleaned_jd = clean_text(job_description)
     similarity_score, matched_skills, missing_skills = calculate_similarity(cleaned_resume, cleaned_jd, ALL_SKILLS)
@@ -222,6 +249,7 @@ async def analyze_resume(request: Request, resume: UploadFile = File(...), job_d
             "quality_audit": quality_audit,
             "user": user_email,
             "linkedin_url": request.session.get("linkedin_url"),
+            "role": get_session_role(request),
         },
     )
 
@@ -233,6 +261,7 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == user_email).first()
     if not user:
         return RedirectResponse("/login", status_code=303)
+    request.session["role"] = user.role or "job_seeker"
     analyses = db.query(Analysis).filter(Analysis.user_id == user.id).all()
     total_scans = len(analyses)
     avg_score = int(sum(a.score or 0 for a in analyses) / total_scans) if total_scans > 0 else 0
@@ -251,6 +280,7 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
             "score_change": score_change,
             "user": user_email,
             "linkedin_url": user.linkedin_url,
+            "role": user.role or "job_seeker",
         },
     )
 
@@ -262,7 +292,10 @@ def profile_page(request: Request, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == request.session["user"]).first()
     if not user:
         return RedirectResponse("/login", status_code=303)
-    return templates.TemplateResponse("profile.html", {"request": request, "linkedin_url": user.linkedin_url, "saved": False})
+    return templates.TemplateResponse(
+        "profile.html",
+        {"request": request, "linkedin_url": user.linkedin_url, "saved": False, "role": user.role or "job_seeker"},
+    )
 
 
 @app.post("/profile", response_class=HTMLResponse)
@@ -274,11 +307,23 @@ def update_profile(request: Request, linkedin_url: str = Form(""), db: Session =
         return RedirectResponse("/login", status_code=303)
     normalized_linkedin = normalize_linkedin_url(linkedin_url)
     if linkedin_url.strip() and not normalized_linkedin:
-        return templates.TemplateResponse("profile.html", {"request": request, "linkedin_url": user.linkedin_url, "saved": False, "error": "Enter a valid LinkedIn URL"})
+        return templates.TemplateResponse(
+            "profile.html",
+            {
+                "request": request,
+                "linkedin_url": user.linkedin_url,
+                "saved": False,
+                "error": "Enter a valid LinkedIn URL",
+                "role": user.role or "job_seeker",
+            },
+        )
     user.linkedin_url = normalized_linkedin
     db.commit()
     request.session["linkedin_url"] = user.linkedin_url
-    return templates.TemplateResponse("profile.html", {"request": request, "linkedin_url": user.linkedin_url, "saved": True})
+    return templates.TemplateResponse(
+        "profile.html",
+        {"request": request, "linkedin_url": user.linkedin_url, "saved": True, "role": user.role or "job_seeker"},
+    )
 
 @app.get("/logout")
 def logout(request: Request):
@@ -302,11 +347,15 @@ def download_report(request: Request):
 def ats_resume_page(request: Request):
     if not request.session.get("user"):
         return RedirectResponse("/login", status_code=303)
+    restricted = hr_restricted_redirect(request)
+    if restricted:
+        return restricted
     return templates.TemplateResponse(
         "ats_resume.html",
         {
             "request": request,
             "linkedin_url": request.session.get("linkedin_url"),
+            "role": get_session_role(request),
             "generated_resume": "",
             "form_data": {},
         },
@@ -331,6 +380,9 @@ def generate_ats_resume(
 ):
     if not request.session.get("user"):
         return RedirectResponse("/login", status_code=303)
+    restricted = hr_restricted_redirect(request)
+    if restricted:
+        return restricted
 
     form_data = {
         "full_name": full_name,
@@ -357,6 +409,7 @@ def generate_ats_resume(
         {
             "request": request,
             "linkedin_url": request.session.get("linkedin_url"),
+            "role": get_session_role(request),
             "generated_resume": resume_text,
             "form_data": form_data,
         },
@@ -414,9 +467,18 @@ def download_ats_resume_docx(request: Request):
 def cover_letter_page(request: Request):
     if not request.session.get("user"):
         return RedirectResponse("/login", status_code=303)
+    restricted = hr_restricted_redirect(request)
+    if restricted:
+        return restricted
     return templates.TemplateResponse(
         "cover_letter.html",
-        {"request": request, "linkedin_url": request.session.get("linkedin_url"), "generated_letter": "", "form_data": {}},
+        {
+            "request": request,
+            "linkedin_url": request.session.get("linkedin_url"),
+            "role": get_session_role(request),
+            "generated_letter": "",
+            "form_data": {},
+        },
     )
 
 
@@ -436,6 +498,9 @@ def generate_cover_letter(
 ):
     if not request.session.get("user"):
         return RedirectResponse("/login", status_code=303)
+    restricted = hr_restricted_redirect(request)
+    if restricted:
+        return restricted
     form_data = {
         "full_name": full_name,
         "email": email,
@@ -456,6 +521,7 @@ def generate_cover_letter(
         {
             "request": request,
             "linkedin_url": request.session.get("linkedin_url"),
+            "role": get_session_role(request),
             "generated_letter": letter_text,
             "form_data": form_data,
         },
@@ -513,13 +579,16 @@ def download_cover_letter_docx(request: Request):
 def applications_page(request: Request, db: Session = Depends(get_db)):
     if not request.session.get("user"):
         return RedirectResponse("/login", status_code=303)
+    restricted = hr_restricted_redirect(request)
+    if restricted:
+        return restricted
     user = db.query(User).filter(User.email == request.session["user"]).first()
     if not user:
         return RedirectResponse("/login", status_code=303)
     applications = db.query(Application).filter(Application.user_id == user.id).order_by(Application.id.desc()).all()
     return templates.TemplateResponse(
         "applications.html",
-        {"request": request, "linkedin_url": user.linkedin_url, "applications": applications},
+        {"request": request, "linkedin_url": user.linkedin_url, "applications": applications, "role": user.role or "job_seeker"},
     )
 
 
@@ -535,6 +604,9 @@ def create_application(
 ):
     if not request.session.get("user"):
         return RedirectResponse("/login", status_code=303)
+    restricted = hr_restricted_redirect(request)
+    if restricted:
+        return restricted
     user = db.query(User).filter(User.email == request.session["user"]).first()
     if not user:
         return RedirectResponse("/login", status_code=303)

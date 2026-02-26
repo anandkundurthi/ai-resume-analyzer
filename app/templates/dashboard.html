@@ -77,9 +77,11 @@
     <div class="nav-links">
         <a href="/upload" class="nav-link">Analyze</a>
         <a href="/dashboard" class="nav-link active">Dashboard</a>
+        {% if role != "hr" %}
         <a href="/applications" class="nav-link">Applications</a>
         <a href="/ats-resume" class="nav-link">ATS Resume</a>
         <a href="/cover-letter" class="nav-link">Cover Letter</a>
+        {% endif %}
         <a href="/profile" class="nav-link">Profile</a>
         {% if linkedin_url %}
         <a href="{{ linkedin_url }}" class="nav-link" target="_blank" rel="noopener noreferrer">LinkedIn</a>
@@ -89,7 +91,11 @@
 </nav>
 <main>
     <div class="page-header">
+        {% if role == "hr" %}
+        <div><h1>HR Dashboard</h1><p>Track candidate-job match analysis history</p></div>
+        {% else %}
         <div><h1>Dashboard</h1><p>Track your resume analysis history</p></div>
+        {% endif %}
         <a href="/upload" class="btn-new">+ New Analysis</a>
     </div>
     <div class="stats-grid">
