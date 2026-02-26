@@ -56,8 +56,6 @@ def login(request: Request, email: str = Form(...), password: str = Form(...), d
 
 @app.get("/register", response_class=HTMLResponse)
 def register_page(request: Request):
-    if request.session.get("user"):
-        return RedirectResponse("/upload", status_code=303)
     return templates.TemplateResponse("register.html", {"request": request, "linkedin_url": ""})
 
 @app.post("/register")
