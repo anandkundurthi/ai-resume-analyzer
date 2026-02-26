@@ -49,6 +49,18 @@ def hr_restricted_redirect(request: Request):
         return RedirectResponse("/dashboard", status_code=303)
     return None
 
+
+def get_current_user(request: Request, db: Session):
+    user_id = request.session.get("user_id")
+    if user_id:
+        user = db.query(User).filter(User.id == user_id).first()
+        if user:
+            return user
+    email = request.session.get("user")
+    if not email:
+        return None
+    return db.query(User).filter(User.email == email, User.role == get_session_role(request)).first()
+
 @app.get("/")
 def root():
     return RedirectResponse("/login", status_code=303)
@@ -60,8 +72,8 @@ def login_page(request: Request):
 
 def handle_login(request: Request, account_role: str, email: str, password: str, db: Session):
     email = email.strip().lower()
-    user = db.query(User).filter(User.email == email).first()
-    if not user or password != user.hashed_password or (user.role or "job_seeker") != account_role:
+    user = db.query(User).filter(User.email == email, User.role == account_role).first()
+    if not user or password != user.hashed_password:
         return templates.TemplateResponse(
             "login.html",
             {
@@ -72,6 +84,7 @@ def handle_login(request: Request, account_role: str, email: str, password: str,
             },
         )
     request.session["user"] = user.email
+    request.session["user_id"] = user.id
     request.session["linkedin_url"] = user.linkedin_url
     request.session["role"] = user.role or "job_seeker"
     return RedirectResponse("/upload", status_code=303)
@@ -117,7 +130,7 @@ def handle_register(
     db: Session = Depends(get_db),
 ):
     email = email.strip().lower()
-    existing_user = db.query(User).filter(User.email == email).first()
+    existing_user = db.query(User).filter(User.email == email, User.role == account_role).first()
     if existing_user:
         return templates.TemplateResponse(
             "register.html",
@@ -197,8 +210,10 @@ def upload_page(request: Request):
 async def analyze_resume(request: Request, resume: UploadFile = File(...), job_description: str = Form(...), db: Session = Depends(get_db)):
     if not request.session.get("user"):
         return RedirectResponse("/login", status_code=303)
-    user_email = request.session.get("user")
-    user = db.query(User).filter(User.email == user_email).first()
+    user = get_current_user(request, db)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    user_email = user.email
     try:
         resume_text = extract_text_from_upload(resume)
     except ValueError as e:
@@ -257,10 +272,11 @@ async def analyze_resume(request: Request, resume: UploadFile = File(...), job_d
 def dashboard(request: Request, db: Session = Depends(get_db)):
     if not request.session.get("user"):
         return RedirectResponse("/login", status_code=303)
-    user_email = request.session.get("user")
-    user = db.query(User).filter(User.email == user_email).first()
+    user = get_current_user(request, db)
     if not user:
         return RedirectResponse("/login", status_code=303)
+    user_email = user.email
+    request.session["user_id"] = user.id
     request.session["role"] = user.role or "job_seeker"
     analyses = db.query(Analysis).filter(Analysis.user_id == user.id).all()
     total_scans = len(analyses)
@@ -289,7 +305,7 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
 def profile_page(request: Request, db: Session = Depends(get_db)):
     if not request.session.get("user"):
         return RedirectResponse("/login", status_code=303)
-    user = db.query(User).filter(User.email == request.session["user"]).first()
+    user = get_current_user(request, db)
     if not user:
         return RedirectResponse("/login", status_code=303)
     return templates.TemplateResponse(
@@ -302,7 +318,7 @@ def profile_page(request: Request, db: Session = Depends(get_db)):
 def update_profile(request: Request, linkedin_url: str = Form(""), db: Session = Depends(get_db)):
     if not request.session.get("user"):
         return RedirectResponse("/login", status_code=303)
-    user = db.query(User).filter(User.email == request.session["user"]).first()
+    user = get_current_user(request, db)
     if not user:
         return RedirectResponse("/login", status_code=303)
     normalized_linkedin = normalize_linkedin_url(linkedin_url)
@@ -582,7 +598,7 @@ def applications_page(request: Request, db: Session = Depends(get_db)):
     restricted = hr_restricted_redirect(request)
     if restricted:
         return restricted
-    user = db.query(User).filter(User.email == request.session["user"]).first()
+    user = get_current_user(request, db)
     if not user:
         return RedirectResponse("/login", status_code=303)
     applications = db.query(Application).filter(Application.user_id == user.id).order_by(Application.id.desc()).all()
@@ -607,7 +623,7 @@ def create_application(
     restricted = hr_restricted_redirect(request)
     if restricted:
         return restricted
-    user = db.query(User).filter(User.email == request.session["user"]).first()
+    user = get_current_user(request, db)
     if not user:
         return RedirectResponse("/login", status_code=303)
     application = Application(
