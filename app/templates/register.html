@@ -42,6 +42,8 @@
         .login-link { text-align: center; font-size: 14px; color: #6b7a90; }
         .login-link a { color: var(--navy); font-weight: 600; text-decoration: none; border-bottom: 2px solid var(--gold); padding-bottom: 1px; }
         .login-link a:hover { color: var(--gold); }
+        .role-switch { text-align: center; font-size: 13px; color: #7a879a; margin-top: 12px; }
+        .role-switch a { color: var(--navy); text-decoration: none; font-weight: 600; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @media (max-width: 900px) { .left-panel { display: none; } .right-panel { width: 100%; padding: 32px 20px; } }
     </style>
@@ -62,17 +64,24 @@
 </div>
 <div class="right-panel">
     <div class="form-container">
-        <h2 class="form-title">Create account</h2>
-        <p class="form-subtitle">Free forever. No credit card required.</p>
+        <h2 class="form-title">Create {{ account_label or "Job Seeker" }} account</h2>
+        <p class="form-subtitle">Get started in less than a minute.</p>
         {% if error %}<div class="error-box">⚠ {{ error }}</div>{% endif %}
         <form method="post">
             <div class="form-group"><label>Email Address</label><input type="email" name="email" placeholder="you@example.com" required></div>
             <div class="form-group"><label>LinkedIn Profile (Optional)</label><input type="url" name="linkedin_url" placeholder="https://www.linkedin.com/in/your-id" value="{{ linkedin_url or '' }}"></div>
             <div class="form-group"><label>Password</label><input type="password" name="password" placeholder="Create a strong password" required><p class="password-hint">At least 8 characters recommended</p></div>
-            <button type="submit" class="btn-primary">Create Account →</button>
+            <button type="submit" class="btn-primary">Create {{ account_label or "Job Seeker" }} Account →</button>
         </form>
         <div class="divider">or</div>
-        <div class="login-link">Already have an account? <a href="/login">Sign in</a></div>
+        <div class="login-link">Already have an account? <a href="{% if account_role == 'hr' %}/login/hr{% else %}/login/job-seeker{% endif %}">Sign in</a></div>
+        <div class="role-switch">
+            {% if account_role == 'hr' %}
+            Need Job Seeker account? <a href="/register/job-seeker">Register as Job Seeker</a>
+            {% else %}
+            Need HR account? <a href="/register/hr">Register as HR</a>
+            {% endif %}
+        </div>
     </div>
 </div>
 </body>

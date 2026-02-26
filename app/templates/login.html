@@ -39,6 +39,8 @@
         .register-link { text-align: center; font-size: 14px; color: #6b7a90; }
         .register-link a { color: var(--navy); font-weight: 600; text-decoration: none; border-bottom: 2px solid var(--gold); padding-bottom: 1px; }
         .register-link a:hover { color: var(--gold); }
+        .role-switch { text-align: center; font-size: 13px; color: #7a879a; margin-top: 12px; }
+        .role-switch a { color: var(--navy); text-decoration: none; font-weight: 600; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @media (max-width: 900px) { .left-panel { display: none; } .right-panel { width: 100%; padding: 32px 20px; } }
     </style>
@@ -60,15 +62,22 @@
 <div class="right-panel">
     <div class="form-container">
         <h2 class="form-title">Welcome back</h2>
-        <p class="form-subtitle">Sign in to continue to your dashboard</p>
+        <p class="form-subtitle">Sign in as {{ account_label or "Job Seeker" }}</p>
         {% if error %}<div class="error-box">⚠ {{ error }}</div>{% endif %}
         <form method="post">
             <div class="form-group"><label>Email Address</label><input type="email" name="email" placeholder="you@example.com" required></div>
             <div class="form-group"><label>Password</label><input type="password" name="password" placeholder="Enter your password" required></div>
-            <button type="submit" class="btn-primary">Sign In →</button>
+            <button type="submit" class="btn-primary">Sign In as {{ account_label or "Job Seeker" }} →</button>
         </form>
         <div class="divider">or</div>
-        <div class="register-link">Don't have an account? <a href="/register">Create one free</a></div>
+        <div class="register-link">Don't have an account? <a href="{% if account_role == 'hr' %}/register/hr{% else %}/register/job-seeker{% endif %}">Create one</a></div>
+        <div class="role-switch">
+            {% if account_role == 'hr' %}
+            Not HR? <a href="/login/job-seeker">Login as Job Seeker</a>
+            {% else %}
+            Not Job Seeker? <a href="/login/hr">Login as HR</a>
+            {% endif %}
+        </div>
     </div>
 </div>
 </body>

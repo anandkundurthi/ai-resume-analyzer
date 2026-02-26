@@ -24,6 +24,7 @@ app.add_middleware(SessionMiddleware, secret_key="supersecretkey")
 templates = Jinja2Templates(directory="app/templates")
 
 ALL_SKILLS = skills["technical"] + skills["soft_skills"] + skills["tools"] + skills["business"]
+ROLE_LABELS = {"job_seeker": "Job Seeker", "hr": "HR"}
 
 
 def normalize_linkedin_url(url: str):
@@ -44,25 +45,62 @@ def root():
 
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse("auth_choice.html", {"request": request})
 
-@app.post("/login")
-def login(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+
+def handle_login(request: Request, account_role: str, email: str, password: str, db: Session):
     email = email.strip().lower()
     user = db.query(User).filter(User.email == email).first()
-    if not user or password != user.hashed_password:
-        return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"})
+    if not user or password != user.hashed_password or (user.role or "job_seeker") != account_role:
+        return templates.TemplateResponse(
+            "login.html",
+            {
+                "request": request,
+                "error": f"Invalid credentials for {ROLE_LABELS[account_role]} account",
+                "account_role": account_role,
+                "account_label": ROLE_LABELS[account_role],
+            },
+        )
     request.session["user"] = user.email
     request.session["linkedin_url"] = user.linkedin_url
+    request.session["role"] = user.role or "job_seeker"
     return RedirectResponse("/upload", status_code=303)
+
+
+@app.get("/login/job-seeker", response_class=HTMLResponse)
+def login_job_seeker_page(request: Request):
+    return templates.TemplateResponse(
+        "login.html",
+        {"request": request, "account_role": "job_seeker", "account_label": ROLE_LABELS["job_seeker"]},
+    )
+
+
+@app.post("/login/job-seeker")
+def login_job_seeker(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+    return handle_login(request, "job_seeker", email, password, db)
+
+
+@app.get("/login/hr", response_class=HTMLResponse)
+def login_hr_page(request: Request):
+    return templates.TemplateResponse(
+        "login.html",
+        {"request": request, "account_role": "hr", "account_label": ROLE_LABELS["hr"]},
+    )
+
+
+@app.post("/login/hr")
+def login_hr(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+    return handle_login(request, "hr", email, password, db)
+
 
 @app.get("/register", response_class=HTMLResponse)
 def register_page(request: Request):
-    return templates.TemplateResponse("register.html", {"request": request, "linkedin_url": ""})
+    return templates.TemplateResponse("auth_choice.html", {"request": request})
 
-@app.post("/register")
-def register(
+
+def handle_register(
     request: Request,
+    account_role: str,
     email: str = Form(...),
     password: str = Form(...),
     linkedin_url: str = Form(""),
@@ -77,15 +115,64 @@ def register(
                 "request": request,
                 "error": "User already exists. Please login.",
                 "linkedin_url": linkedin_url,
+                "account_role": account_role,
+                "account_label": ROLE_LABELS[account_role],
             },
         )
     normalized_linkedin = normalize_linkedin_url(linkedin_url)
     if linkedin_url.strip() and not normalized_linkedin:
-        return templates.TemplateResponse("register.html", {"request": request, "error": "Enter a valid LinkedIn URL", "linkedin_url": linkedin_url})
-    new_user = User(email=email, hashed_password=password, linkedin_url=normalized_linkedin)
+        return templates.TemplateResponse(
+            "register.html",
+            {
+                "request": request,
+                "error": "Enter a valid LinkedIn URL",
+                "linkedin_url": linkedin_url,
+                "account_role": account_role,
+                "account_label": ROLE_LABELS[account_role],
+            },
+        )
+    new_user = User(email=email, hashed_password=password, linkedin_url=normalized_linkedin, role=account_role)
     db.add(new_user)
     db.commit()
-    return RedirectResponse("/login", status_code=303)
+    return RedirectResponse(f"/login/{'job-seeker' if account_role == 'job_seeker' else 'hr'}", status_code=303)
+
+
+@app.get("/register/job-seeker", response_class=HTMLResponse)
+def register_job_seeker_page(request: Request):
+    return templates.TemplateResponse(
+        "register.html",
+        {"request": request, "linkedin_url": "", "account_role": "job_seeker", "account_label": ROLE_LABELS["job_seeker"]},
+    )
+
+
+@app.post("/register/job-seeker")
+def register_job_seeker(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...),
+    linkedin_url: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    return handle_register(request, "job_seeker", email, password, linkedin_url, db)
+
+
+@app.get("/register/hr", response_class=HTMLResponse)
+def register_hr_page(request: Request):
+    return templates.TemplateResponse(
+        "register.html",
+        {"request": request, "linkedin_url": "", "account_role": "hr", "account_label": ROLE_LABELS["hr"]},
+    )
+
+
+@app.post("/register/hr")
+def register_hr(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...),
+    linkedin_url: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    return handle_register(request, "hr", email, password, linkedin_url, db)
 
 @app.get("/upload", response_class=HTMLResponse)
 def upload_page(request: Request):

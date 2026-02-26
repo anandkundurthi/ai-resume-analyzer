@@ -30,6 +30,7 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     linkedin_url = Column(String, nullable=True)
+    role = Column(String, nullable=False, default="job_seeker")
 
 
 # ANALYSIS MODEL
@@ -68,6 +69,10 @@ def ensure_schema():
         columns = {row[1] for row in conn.execute(text("PRAGMA table_info(users)")).fetchall()}
         if "linkedin_url" not in columns:
             conn.execute(text("ALTER TABLE users ADD COLUMN linkedin_url VARCHAR"))
+            conn.commit()
+        if "role" not in columns:
+            conn.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR DEFAULT 'job_seeker'"))
+            conn.execute(text("UPDATE users SET role = 'job_seeker' WHERE role IS NULL OR role = ''"))
             conn.commit()
 
 
