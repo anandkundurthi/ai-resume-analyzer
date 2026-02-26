@@ -217,3 +217,87 @@ def build_report_text(user_email, score, matched_skills, missing_skills, action_
         f"- {action_plan['resume_edits'][2]}",
     ]
     return "\n".join(lines)
+
+
+def parse_multiline_items(raw_text):
+    if not raw_text:
+        return []
+    items = []
+    for line in raw_text.splitlines():
+        cleaned = line.strip().lstrip("-").strip()
+        if cleaned:
+            items.append(cleaned)
+    return items
+
+
+def parse_comma_items(raw_text):
+    if not raw_text:
+        return []
+    return [item.strip() for item in raw_text.split(",") if item.strip()]
+
+
+def build_ats_resume_text(data):
+    full_name = (data.get("full_name") or "").strip()
+    email = (data.get("email") or "").strip()
+    phone = (data.get("phone") or "").strip()
+    location = (data.get("location") or "").strip()
+    linkedin = (data.get("linkedin") or "").strip()
+    github = (data.get("github") or "").strip()
+    summary = (data.get("summary") or "").strip()
+    skills = parse_comma_items(data.get("skills"))
+    experience = parse_multiline_items(data.get("experience"))
+    projects = parse_multiline_items(data.get("projects"))
+    education = parse_multiline_items(data.get("education"))
+    certifications = parse_multiline_items(data.get("certifications"))
+
+    header_parts = [part for part in [email, phone, location] if part]
+    if linkedin:
+        header_parts.append(linkedin)
+    if github:
+        header_parts.append(github)
+
+    lines = []
+    lines.append(full_name or "CANDIDATE NAME")
+    lines.append(" | ".join(header_parts))
+    lines.append("")
+
+    lines.append("PROFESSIONAL SUMMARY")
+    lines.append(summary or "Add a concise 2-3 line summary aligned with your target role and measurable outcomes.")
+    lines.append("")
+
+    lines.append("CORE SKILLS")
+    lines.append(", ".join(skills) if skills else "Add role-relevant keywords such as Python, SQL, FastAPI, Docker, and Cloud.")
+    lines.append("")
+
+    lines.append("PROFESSIONAL EXPERIENCE")
+    if experience:
+        for item in experience:
+            lines.append(f"- {item}")
+    else:
+        lines.append("- Add role, company, dates, and quantified impact bullets.")
+    lines.append("")
+
+    lines.append("PROJECTS")
+    if projects:
+        for item in projects:
+            lines.append(f"- {item}")
+    else:
+        lines.append("- Add projects with tech stack and measurable outcomes.")
+    lines.append("")
+
+    lines.append("EDUCATION")
+    if education:
+        for item in education:
+            lines.append(f"- {item}")
+    else:
+        lines.append("- Add degree, institution, and graduation year.")
+    lines.append("")
+
+    lines.append("CERTIFICATIONS")
+    if certifications:
+        for item in certifications:
+            lines.append(f"- {item}")
+    else:
+        lines.append("- Add relevant certifications or leave this section out if not applicable.")
+
+    return "\n".join(lines)

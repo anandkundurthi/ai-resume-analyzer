@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATS Resume Builder — ResumeAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root { --navy: #0f1e35; --navy-light: #1e3a5f; --gold: #c9a84c; --gold-light: #e8c97a; --white: #f8f6f1; --muted: #8a9bb5; --bg: #f4f6f9; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--navy); min-height: 100vh; }
+        nav { background: var(--navy); padding: 0 48px; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+        .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .brand-icon { width: 34px; height: 34px; background: linear-gradient(135deg, var(--gold), var(--gold-light)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .brand-name { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--white); }
+        .brand-name span { color: var(--gold); }
+        .nav-links { display: flex; align-items: center; gap: 8px; }
+        .nav-link { text-decoration: none; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; color: var(--muted); transition: all 0.2s; }
+        .nav-link:hover { color: var(--white); background: rgba(255,255,255,0.07); }
+        .nav-link.active { color: var(--white); }
+        .nav-logout { text-decoration: none; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; color: var(--navy); background: var(--gold); transition: all 0.2s; }
+        .nav-logout:hover { background: var(--gold-light); }
+        main { max-width: 1100px; margin: 0 auto; padding: 50px 24px; }
+        .header { margin-bottom: 24px; }
+        .header h1 { font-family: 'Playfair Display', serif; font-size: 38px; margin-bottom: 8px; }
+        .header p { color: #6b7a90; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card { background: white; border-radius: 14px; padding: 24px; border: 1px solid #e8edf5; box-shadow: 0 1px 8px rgba(15,30,53,0.04); }
+        label { display: block; font-size: 12px; font-weight: 600; color: #4a5568; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 7px; margin-top: 12px; }
+        input, textarea { width: 100%; padding: 12px 14px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--navy); background: #fafbfc; outline: none; }
+        textarea { min-height: 88px; resize: vertical; line-height: 1.5; }
+        input:focus, textarea:focus { border-color: var(--gold); background: #fff; box-shadow: 0 0 0 4px rgba(201,168,76,0.1); }
+        .btn-row { display: flex; gap: 10px; margin-top: 16px; }
+        .btn { text-decoration: none; border: none; cursor: pointer; padding: 12px 14px; border-radius: 10px; font-size: 14px; font-weight: 600; }
+        .btn-primary { background: var(--navy); color: var(--white); flex: 1; }
+        .btn-primary:hover { background: var(--navy-light); }
+        .btn-secondary { background: #f7f1dd; color: #7a5b0f; border: 1px solid #e8d39a; flex: 1; text-align: center; }
+        .btn-secondary:hover { background: #f3e7c2; }
+        .hint { font-size: 12px; color: #8a9bb5; margin-top: 8px; }
+        .resume-preview { min-height: 520px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; white-space: pre-wrap; background: #f9fbfd; border: 1px solid #e8edf5; border-radius: 10px; padding: 14px; font-size: 13px; line-height: 1.6; }
+        @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+<nav>
+    <a href="/upload" class="brand"><div class="brand-icon">📄</div><div class="brand-name">Resume<span>AI</span></div></a>
+    <div class="nav-links">
+        <a href="/upload" class="nav-link">Analyze</a>
+        <a href="/dashboard" class="nav-link">Dashboard</a>
+        <a href="/ats-resume" class="nav-link active">ATS Builder</a>
+        <a href="/profile" class="nav-link">Profile</a>
+        {% if linkedin_url %}<a href="{{ linkedin_url }}" class="nav-link" target="_blank" rel="noopener noreferrer">LinkedIn</a>{% endif %}
+        <a href="/logout" class="nav-logout">Sign Out</a>
+    </div>
+</nav>
+<main>
+    <div class="header">
+        <h1>ATS Resume Builder</h1>
+        <p>Enter your details to generate an ATS-friendly resume draft. Use one bullet per line for Experience, Projects, Education, and Certifications.</p>
+    </div>
+    <div class="grid">
+        <div class="card">
+            <form method="post">
+                <label>Full Name</label>
+                <input type="text" name="full_name" value="{{ form_data.get('full_name', '') }}" required>
+
+                <label>Email</label>
+                <input type="email" name="email" value="{{ form_data.get('email', '') }}">
+
+                <label>Phone</label>
+                <input type="text" name="phone" value="{{ form_data.get('phone', '') }}">
+
+                <label>Location</label>
+                <input type="text" name="location" value="{{ form_data.get('location', '') }}">
+
+                <label>LinkedIn URL</label>
+                <input type="text" name="linkedin" value="{{ form_data.get('linkedin', '') }}">
+
+                <label>GitHub URL</label>
+                <input type="text" name="github" value="{{ form_data.get('github', '') }}">
+
+                <label>Professional Summary</label>
+                <textarea name="summary">{{ form_data.get('summary', '') }}</textarea>
+
+                <label>Core Skills (comma separated)</label>
+                <textarea name="skills">{{ form_data.get('skills', '') }}</textarea>
+
+                <label>Professional Experience (one bullet per line)</label>
+                <textarea name="experience">{{ form_data.get('experience', '') }}</textarea>
+
+                <label>Projects (one bullet per line)</label>
+                <textarea name="projects">{{ form_data.get('projects', '') }}</textarea>
+
+                <label>Education (one bullet per line)</label>
+                <textarea name="education">{{ form_data.get('education', '') }}</textarea>
+
+                <label>Certifications (one bullet per line)</label>
+                <textarea name="certifications">{{ form_data.get('certifications', '') }}</textarea>
+
+                <div class="btn-row">
+                    <button type="submit" class="btn btn-primary">Generate ATS Resume</button>
+                    {% if generated_resume %}<a href="/download-ats-resume" class="btn btn-secondary">Download .txt</a>{% endif %}
+                </div>
+                <div class="hint">Tip: keep resume keywords aligned to the job description you target.</div>
+            </form>
+        </div>
+        <div class="card">
+            <label>Generated Resume Preview</label>
+            <div class="resume-preview">{{ generated_resume or "Your ATS resume preview will appear here after generation." }}</div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

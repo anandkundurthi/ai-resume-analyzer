@@ -5,6 +5,7 @@ from app.utils import (
     calculate_similarity,
     generate_action_plan,
     build_report_text,
+    build_ats_resume_text,
 )
 from app.skill_db import skills
 from fastapi import UploadFile, File, FastAPI, Request, Form, Depends
@@ -186,4 +187,81 @@ def download_report(request: Request):
         return RedirectResponse("/dashboard", status_code=303)
     response = PlainTextResponse(report.get("text", ""), media_type="text/plain")
     response.headers["Content-Disposition"] = f'attachment; filename="{report.get("filename", "resume_report.txt")}"'
+    return response
+
+
+@app.get("/ats-resume", response_class=HTMLResponse)
+def ats_resume_page(request: Request):
+    if not request.session.get("user"):
+        return RedirectResponse("/login", status_code=303)
+    return templates.TemplateResponse(
+        "ats_resume.html",
+        {
+            "request": request,
+            "linkedin_url": request.session.get("linkedin_url"),
+            "generated_resume": "",
+            "form_data": {},
+        },
+    )
+
+
+@app.post("/ats-resume", response_class=HTMLResponse)
+def generate_ats_resume(
+    request: Request,
+    full_name: str = Form(""),
+    email: str = Form(""),
+    phone: str = Form(""),
+    location: str = Form(""),
+    linkedin: str = Form(""),
+    github: str = Form(""),
+    summary: str = Form(""),
+    skills: str = Form(""),
+    experience: str = Form(""),
+    projects: str = Form(""),
+    education: str = Form(""),
+    certifications: str = Form(""),
+):
+    if not request.session.get("user"):
+        return RedirectResponse("/login", status_code=303)
+
+    form_data = {
+        "full_name": full_name,
+        "email": email,
+        "phone": phone,
+        "location": location,
+        "linkedin": linkedin,
+        "github": github,
+        "summary": summary,
+        "skills": skills,
+        "experience": experience,
+        "projects": projects,
+        "education": education,
+        "certifications": certifications,
+    }
+    resume_text = build_ats_resume_text(form_data)
+    safe_name = (full_name.strip() or "candidate").replace(" ", "_")
+    request.session["ats_resume"] = {
+        "filename": f"{safe_name.lower()}_ats_resume.txt",
+        "text": resume_text,
+    }
+    return templates.TemplateResponse(
+        "ats_resume.html",
+        {
+            "request": request,
+            "linkedin_url": request.session.get("linkedin_url"),
+            "generated_resume": resume_text,
+            "form_data": form_data,
+        },
+    )
+
+
+@app.get("/download-ats-resume")
+def download_ats_resume(request: Request):
+    if not request.session.get("user"):
+        return RedirectResponse("/login", status_code=303)
+    ats_resume = request.session.get("ats_resume")
+    if not ats_resume:
+        return RedirectResponse("/ats-resume", status_code=303)
+    response = PlainTextResponse(ats_resume.get("text", ""), media_type="text/plain")
+    response.headers["Content-Disposition"] = f'attachment; filename="{ats_resume.get("filename", "ats_resume.txt")}"'
     return response
