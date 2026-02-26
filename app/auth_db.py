@@ -45,6 +45,20 @@ class Analysis(Base):
     user = relationship("User")
 
 
+class Application(Base):
+    __tablename__ = "applications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    company = Column(String, nullable=False)
+    role = Column(String, nullable=False)
+    status = Column(String, default="Applied")
+    job_link = Column(String, nullable=True)
+    notes = Column(String, nullable=True)
+
+    user = relationship("User")
+
+
 # CREATE TABLES
 Base.metadata.create_all(bind=engine)
 

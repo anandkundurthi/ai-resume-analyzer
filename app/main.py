@@ -9,6 +9,7 @@ from app.utils import (
     build_ats_resume_text,
     build_ats_resume_pdf_bytes,
     build_ats_resume_docx_bytes,
+    build_cover_letter_text,
 )
 from app.skill_db import skills
 from fastapi import UploadFile, File, FastAPI, Request, Form, Depends
@@ -16,7 +17,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, PlainTextResponse,
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy.orm import Session
-from app.auth_db import get_db, User, Analysis
+from app.auth_db import get_db, User, Analysis, Application
 
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key="supersecretkey")
@@ -320,3 +321,144 @@ def download_ats_resume_docx(request: Request):
     )
     response.headers["Content-Disposition"] = f'attachment; filename="{ats_resume.get("base_filename", "ats_resume")}.docx"'
     return response
+
+
+@app.get("/cover-letter", response_class=HTMLResponse)
+def cover_letter_page(request: Request):
+    if not request.session.get("user"):
+        return RedirectResponse("/login", status_code=303)
+    return templates.TemplateResponse(
+        "cover_letter.html",
+        {"request": request, "linkedin_url": request.session.get("linkedin_url"), "generated_letter": "", "form_data": {}},
+    )
+
+
+@app.post("/cover-letter", response_class=HTMLResponse)
+def generate_cover_letter(
+    request: Request,
+    full_name: str = Form(""),
+    email: str = Form(""),
+    phone: str = Form(""),
+    linkedin: str = Form(""),
+    company: str = Form(""),
+    role: str = Form(""),
+    hiring_manager: str = Form(""),
+    years_experience: str = Form(""),
+    top_skills: str = Form(""),
+    achievements: str = Form(""),
+):
+    if not request.session.get("user"):
+        return RedirectResponse("/login", status_code=303)
+    form_data = {
+        "full_name": full_name,
+        "email": email,
+        "phone": phone,
+        "linkedin": linkedin,
+        "company": company,
+        "role": role,
+        "hiring_manager": hiring_manager,
+        "years_experience": years_experience,
+        "top_skills": top_skills,
+        "achievements": achievements,
+    }
+    letter_text = build_cover_letter_text(form_data)
+    safe_name = (full_name.strip() or "candidate").replace(" ", "_")
+    request.session["cover_letter"] = {"base_filename": f"{safe_name.lower()}_cover_letter", "text": letter_text}
+    return templates.TemplateResponse(
+        "cover_letter.html",
+        {
+            "request": request,
+            "linkedin_url": request.session.get("linkedin_url"),
+            "generated_letter": letter_text,
+            "form_data": form_data,
+        },
+    )
+
+
+@app.get("/download-cover-letter")
+def download_cover_letter(request: Request):
+    if not request.session.get("user"):
+        return RedirectResponse("/login", status_code=303)
+    letter = request.session.get("cover_letter")
+    if not letter:
+        return RedirectResponse("/cover-letter", status_code=303)
+    response = PlainTextResponse(letter.get("text", ""), media_type="text/plain")
+    response.headers["Content-Disposition"] = f'attachment; filename="{letter.get("base_filename", "cover_letter")}.txt"'
+    return response
+
+
+@app.get("/download-cover-letter-pdf")
+def download_cover_letter_pdf(request: Request):
+    if not request.session.get("user"):
+        return RedirectResponse("/login", status_code=303)
+    letter = request.session.get("cover_letter")
+    if not letter:
+        return RedirectResponse("/cover-letter", status_code=303)
+    try:
+        pdf_bytes = build_ats_resume_pdf_bytes(letter.get("text", ""))
+    except ImportError:
+        return PlainTextResponse("PDF export dependency missing. Install requirements and retry.", status_code=500)
+    response = Response(content=pdf_bytes, media_type="application/pdf")
+    response.headers["Content-Disposition"] = f'attachment; filename="{letter.get("base_filename", "cover_letter")}.pdf"'
+    return response
+
+
+@app.get("/download-cover-letter-docx")
+def download_cover_letter_docx(request: Request):
+    if not request.session.get("user"):
+        return RedirectResponse("/login", status_code=303)
+    letter = request.session.get("cover_letter")
+    if not letter:
+        return RedirectResponse("/cover-letter", status_code=303)
+    try:
+        docx_bytes = build_ats_resume_docx_bytes(letter.get("text", ""))
+    except ImportError:
+        return PlainTextResponse("DOCX export dependency missing. Install requirements and retry.", status_code=500)
+    response = Response(
+        content=docx_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
+    response.headers["Content-Disposition"] = f'attachment; filename="{letter.get("base_filename", "cover_letter")}.docx"'
+    return response
+
+
+@app.get("/applications", response_class=HTMLResponse)
+def applications_page(request: Request, db: Session = Depends(get_db)):
+    if not request.session.get("user"):
+        return RedirectResponse("/login", status_code=303)
+    user = db.query(User).filter(User.email == request.session["user"]).first()
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    applications = db.query(Application).filter(Application.user_id == user.id).order_by(Application.id.desc()).all()
+    return templates.TemplateResponse(
+        "applications.html",
+        {"request": request, "linkedin_url": user.linkedin_url, "applications": applications},
+    )
+
+
+@app.post("/applications", response_class=HTMLResponse)
+def create_application(
+    request: Request,
+    company: str = Form(...),
+    role: str = Form(...),
+    status: str = Form("Applied"),
+    job_link: str = Form(""),
+    notes: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    if not request.session.get("user"):
+        return RedirectResponse("/login", status_code=303)
+    user = db.query(User).filter(User.email == request.session["user"]).first()
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    application = Application(
+        user_id=user.id,
+        company=company.strip(),
+        role=role.strip(),
+        status=(status or "Applied").strip(),
+        job_link=job_link.strip() or None,
+        notes=notes.strip() or None,
+    )
+    db.add(application)
+    db.commit()
+    return RedirectResponse("/applications", status_code=303)

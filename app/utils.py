@@ -391,3 +391,57 @@ def build_ats_resume_docx_bytes(resume_text):
     doc.save(output)
     output.seek(0)
     return output.getvalue()
+
+
+def build_cover_letter_text(data):
+    full_name = (data.get("full_name") or "").strip()
+    email = (data.get("email") or "").strip()
+    phone = (data.get("phone") or "").strip()
+    linkedin = (data.get("linkedin") or "").strip()
+    company = (data.get("company") or "").strip()
+    role = (data.get("role") or "").strip()
+    hiring_manager = (data.get("hiring_manager") or "").strip() or "Hiring Manager"
+    years_experience = (data.get("years_experience") or "").strip()
+    top_skills = parse_comma_items(data.get("top_skills"))
+    achievements = parse_multiline_items(data.get("achievements"))
+
+    skills_text = ", ".join(top_skills[:5]) if top_skills else "relevant technical and leadership skills"
+    achievement_text = achievements[0] if achievements else "delivered measurable outcomes through focused execution"
+    exp_text = f" with {years_experience} years of experience" if years_experience else ""
+    today = datetime.utcnow().strftime("%B %d, %Y")
+
+    header_contact = " | ".join([item for item in [email, phone, linkedin] if item])
+    lines = [
+        full_name or "Candidate Name",
+        header_contact,
+        "",
+        today,
+        "",
+        f"{hiring_manager}",
+        company or "Company Name",
+        "",
+        f"Subject: Application for {role or 'the role'}",
+        "",
+        f"Dear {hiring_manager},",
+        "",
+        (
+            f"I am excited to apply for the {role or 'position'} role at {company or 'your company'}."
+            f" I bring{exp_text} and a strong foundation in {skills_text}."
+        ),
+        "",
+        (
+            f"In my recent work, I {achievement_text}. "
+            "I focus on delivering business impact, clean execution, and reliable collaboration across teams."
+        ),
+        "",
+        (
+            f"I am confident that my background aligns well with the needs of {company or 'your team'}."
+            " I would welcome the opportunity to discuss how I can contribute to your goals."
+        ),
+        "",
+        "Thank you for your time and consideration.",
+        "",
+        "Sincerely,",
+        full_name or "Candidate Name",
+    ]
+    return "\n".join(lines)
