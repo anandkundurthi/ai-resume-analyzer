@@ -1,4 +1,5 @@
 from PyPDF2 import PdfReader
+from datetime import datetime
 
 def extract_text_from_pdf(file):
     reader = PdfReader(file)
@@ -59,3 +60,90 @@ def generate_career_suggestions(score, missing_skills):
     if "docker" in missing_skills:
         suggestions.append("Docker knowledge is essential for DevOps and Backend Engineering roles.")
     return suggestions
+
+
+def generate_action_plan(score, matched_skills, missing_skills):
+    strengths = matched_skills[:5]
+    focus_skills = missing_skills[:5]
+
+    if score >= 80:
+        level = "Strong Fit"
+        headline = "You are interview-ready for many roles in this category."
+    elif score >= 60:
+        level = "Competitive Fit"
+        headline = "You are close to target. Closing top gaps can significantly improve outcomes."
+    elif score >= 40:
+        level = "Developing Fit"
+        headline = "You have partial alignment. Build core skills and strengthen evidence in projects."
+    else:
+        level = "Early Fit"
+        headline = "You need stronger baseline alignment before applying broadly."
+
+    priority_actions = []
+    for skill in focus_skills[:3]:
+        priority_actions.append(f"Build and document one project outcome using {skill}.")
+    while len(priority_actions) < 3:
+        priority_actions.append("Add measurable impact bullets using metrics (%, $, time saved).")
+
+    week_plan = [
+        "Week 1: Prioritize top 2 missing skills and create a focused learning schedule.",
+        "Week 2: Build a mini-project that demonstrates those skills with business impact.",
+        "Week 3: Rewrite resume bullets using action verbs and quantified outcomes.",
+        "Week 4: Re-analyze resume and apply to roles matching your improved profile.",
+    ]
+
+    resume_edits = [
+        "Move strongest, role-relevant projects to the top half of the resume.",
+        "Add a 2-line professional summary aligned with the target job.",
+        "Tailor skills order so required keywords appear naturally in context.",
+    ]
+
+    return {
+        "level": level,
+        "headline": headline,
+        "strengths": strengths,
+        "focus_skills": focus_skills,
+        "priority_actions": priority_actions,
+        "week_plan": week_plan,
+        "resume_edits": resume_edits,
+    }
+
+
+def build_report_text(user_email, score, matched_skills, missing_skills, action_plan):
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    matched_text = ", ".join(matched_skills[:10]) if matched_skills else "None identified"
+    missing_text = ", ".join(missing_skills[:10]) if missing_skills else "None identified"
+
+    lines = [
+        "ResumeAI Professional Feedback Report",
+        "===================================",
+        f"Candidate: {user_email}",
+        f"Generated on: {today} UTC",
+        "",
+        f"Match Score: {score}%",
+        f"Fit Level: {action_plan['level']}",
+        f"Summary: {action_plan['headline']}",
+        "",
+        "Top Matched Skills:",
+        matched_text,
+        "",
+        "Top Missing Skills:",
+        missing_text,
+        "",
+        "Priority Actions:",
+        f"1. {action_plan['priority_actions'][0]}",
+        f"2. {action_plan['priority_actions'][1]}",
+        f"3. {action_plan['priority_actions'][2]}",
+        "",
+        "30-Day Roadmap:",
+        f"- {action_plan['week_plan'][0]}",
+        f"- {action_plan['week_plan'][1]}",
+        f"- {action_plan['week_plan'][2]}",
+        f"- {action_plan['week_plan'][3]}",
+        "",
+        "Resume Improvement Checklist:",
+        f"- {action_plan['resume_edits'][0]}",
+        f"- {action_plan['resume_edits'][1]}",
+        f"- {action_plan['resume_edits'][2]}",
+    ]
+    return "\n".join(lines)

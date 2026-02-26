@@ -56,14 +56,29 @@
         .suggestion-item:last-child { border-bottom: none; }
         .suggestion-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); flex-shrink: 0; margin-top: 6px; }
         .suggestion-text { font-size: 14px; color: #4a5568; line-height: 1.6; }
-        .actions { display: flex; gap: 12px; animation: fadeUp 0.5s 0.25s ease both; }
+        .plan-card { background: white; border-radius: 16px; padding: 28px; border: 1px solid #e8edf5; box-shadow: 0 1px 8px rgba(15,30,53,0.04); margin-bottom: 28px; animation: fadeUp 0.5s 0.23s ease both; }
+        .plan-top { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
+        .plan-top h3 { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--navy); }
+        .plan-pill { background: #f7f1dd; color: #7a5b0f; border: 1px solid #e8d39a; border-radius: 20px; padding: 6px 12px; font-size: 12px; font-weight: 600; }
+        .plan-text { font-size: 14px; color: #4a5568; margin-bottom: 18px; }
+        .plan-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
+        .plan-block { border: 1px solid #edf2f7; border-radius: 12px; padding: 14px; background: #fbfcfe; }
+        .plan-block h4 { font-size: 13px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.6px; color: #6b7a90; }
+        .plan-list { padding-left: 18px; }
+        .plan-list li { font-size: 13px; color: #4a5568; line-height: 1.6; margin-bottom: 4px; }
+        .actions { display: flex; gap: 12px; flex-wrap: wrap; animation: fadeUp 0.5s 0.25s ease both; }
         .btn { text-decoration: none; padding: 14px 24px; border-radius: 12px; font-size: 14px; font-weight: 600; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; }
         .btn-primary { background: var(--navy); color: var(--white); flex: 1; justify-content: center; }
         .btn-primary:hover { background: var(--navy-light); transform: translateY(-1px); box-shadow: 0 8px 20px rgba(15,30,53,0.2); }
         .btn-secondary { background: white; color: var(--navy); border: 1.5px solid #e2e8f0; flex: 1; justify-content: center; }
         .btn-secondary:hover { border-color: var(--navy); transform: translateY(-1px); }
+        .btn-tertiary { background: #f7f1dd; color: #7a5b0f; border: 1.5px solid #e8d39a; flex: 1; justify-content: center; }
+        .btn-tertiary:hover { background: #f3e7c2; transform: translateY(-1px); }
         .btn-danger { background: white; color: var(--red); border: 1.5px solid #fca5a5; }
         .btn-danger:hover { background: var(--red-bg); transform: translateY(-1px); }
+        @media (max-width: 800px) {
+            .plan-grid { grid-template-columns: 1fr; }
+        }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
@@ -135,7 +150,33 @@
         <div class="suggestion-item"><div class="suggestion-dot"></div><div class="suggestion-text">{{ item }}</div></div>
         {% endfor %}
     </div>
+    <div class="plan-card">
+        <div class="plan-top">
+            <h3>Professional Action Plan</h3>
+            <span class="plan-pill">{{ action_plan.level }}</span>
+        </div>
+        <p class="plan-text">{{ action_plan.headline }}</p>
+        <div class="plan-grid">
+            <div class="plan-block">
+                <h4>Top Priority Actions</h4>
+                <ol class="plan-list">
+                    {% for item in action_plan.priority_actions %}
+                    <li>{{ item }}</li>
+                    {% endfor %}
+                </ol>
+            </div>
+            <div class="plan-block">
+                <h4>30-Day Roadmap</h4>
+                <ol class="plan-list">
+                    {% for week in action_plan.week_plan %}
+                    <li>{{ week }}</li>
+                    {% endfor %}
+                </ol>
+            </div>
+        </div>
+    </div>
     <div class="actions">
+        <a href="/download-report" class="btn btn-tertiary">⬇ Download Report</a>
         <a href="/dashboard" class="btn btn-secondary">📊 View Dashboard</a>
         <a href="/upload" class="btn btn-primary">Run New Analysis →</a>
         <a href="/logout" class="btn btn-danger">Sign Out</a>

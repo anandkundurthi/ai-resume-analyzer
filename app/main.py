@@ -1,7 +1,14 @@
-from app.utils import generate_career_suggestions, extract_text_from_pdf, clean_text, calculate_similarity
+from app.utils import (
+    generate_career_suggestions,
+    extract_text_from_pdf,
+    clean_text,
+    calculate_similarity,
+    generate_action_plan,
+    build_report_text,
+)
 from app.skill_db import skills
 from fastapi import UploadFile, File, FastAPI, Request, Form, Depends
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, PlainTextResponse
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy.orm import Session
@@ -63,11 +70,29 @@ async def analyze_resume(request: Request, resume: UploadFile = File(...), job_d
     cleaned_jd = clean_text(job_description)
     similarity_score, matched_skills, missing_skills = calculate_similarity(cleaned_resume, cleaned_jd, ALL_SKILLS)
     suggestions = generate_career_suggestions(similarity_score, missing_skills)
+    action_plan = generate_action_plan(similarity_score, matched_skills, missing_skills)
+    report_text = build_report_text(user_email, similarity_score, matched_skills, missing_skills, action_plan)
+    safe_email = user_email.replace("@", "_at_").replace(".", "_")
+    request.session["latest_report"] = {
+        "filename": f"{safe_email}_resume_report.txt",
+        "text": report_text,
+    }
     if user:
         new_analysis = Analysis(user_id=user.id, score=similarity_score, matched_skills=", ".join(matched_skills), missing_skills=", ".join(missing_skills))
         db.add(new_analysis)
         db.commit()
-    return templates.TemplateResponse("result.html", {"request": request, "score": similarity_score, "matched": matched_skills, "missing": missing_skills, "suggestions": suggestions, "user": user_email})
+    return templates.TemplateResponse(
+        "result.html",
+        {
+            "request": request,
+            "score": similarity_score,
+            "matched": matched_skills,
+            "missing": missing_skills,
+            "suggestions": suggestions,
+            "action_plan": action_plan,
+            "user": user_email,
+        },
+    )
 
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard(request: Request, db: Session = Depends(get_db)):
@@ -86,3 +111,15 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
 def logout(request: Request):
     request.session.clear()
     return RedirectResponse("/login", status_code=303)
+
+
+@app.get("/download-report")
+def download_report(request: Request):
+    if not request.session.get("user"):
+        return RedirectResponse("/login", status_code=303)
+    report = request.session.get("latest_report")
+    if not report:
+        return RedirectResponse("/dashboard", status_code=303)
+    response = PlainTextResponse(report.get("text", ""), media_type="text/plain")
+    response.headers["Content-Disposition"] = f'attachment; filename="{report.get("filename", "resume_report.txt")}"'
+    return response
