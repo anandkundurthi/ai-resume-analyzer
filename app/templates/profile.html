@@ -14,15 +14,10 @@
         .brand-icon { width: 34px; height: 34px; background: linear-gradient(135deg, var(--gold), var(--gold-light)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
         .brand-name { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--white); }
         .brand-name span { color: var(--gold); }
-        .nav-links { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .nav-link { text-decoration: none; padding: 8px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; letter-spacing: 0.2px; color: #d3deef; border: 1px solid transparent; transition: all 0.2s; }
-        .nav-link:hover { color: var(--white); border-color: rgba(255,255,255,0.22); background: rgba(255,255,255,0.08); }
-        .nav-link.active { color: var(--white); background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.28); }
-        .nav-link.nav-analyze { border-color: rgba(22,163,74,0.4); color: #86efac; }
-        .nav-link.nav-dashboard { border-color: rgba(59,130,246,0.4); color: #93c5fd; }
-        .nav-link.nav-ats { border-color: rgba(234,179,8,0.4); color: #fde68a; }
-        .nav-link.nav-profile { border-color: rgba(20,184,166,0.45); color: #99f6e4; }
-        .nav-link.nav-linkedin { border-color: rgba(45,137,239,0.45); color: #bfdbfe; }
+        .nav-links { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+        .nav-link { text-decoration: none; font-size: 13px; font-weight: 500; color: #b9c7dd; padding: 4px 0; border-bottom: 2px solid transparent; transition: color 0.2s, border-color 0.2s; }
+        .nav-link:hover { color: var(--white); border-color: rgba(255,255,255,0.25); }
+        .nav-link.active { color: var(--white); border-color: var(--gold); }
         .nav-logout { text-decoration: none; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; color: var(--navy); background: var(--gold); transition: all 0.2s; }
         .nav-logout:hover { background: var(--gold-light); }
         main { max-width: 760px; margin: 0 auto; padding: 60px 24px; }
@@ -43,11 +38,11 @@
 <nav>
     <a href="/upload" class="brand"><div class="brand-icon">📄</div><div class="brand-name">Resume<span>AI</span></div></a>
     <div class="nav-links">
-        <a href="/upload" class="nav-link nav-analyze">Analyze Resume</a>
-        <a href="/dashboard" class="nav-link nav-dashboard">Insights Dashboard</a>
-        <a href="/ats-resume" class="nav-link nav-ats">ATS Builder</a>
-        <a href="/profile" class="nav-link nav-profile active">Profile Settings</a>
-        {% if linkedin_url %}<a href="{{ linkedin_url }}" class="nav-link nav-linkedin" target="_blank" rel="noopener noreferrer">LinkedIn</a>{% endif %}
+        <a href="/upload" class="nav-link">Analyze</a>
+        <a href="/dashboard" class="nav-link">Dashboard</a>
+        <a href="/ats-resume" class="nav-link">ATS Resume</a>
+        <a href="/profile" class="nav-link active">Profile</a>
+        {% if linkedin_url %}<a href="{{ linkedin_url }}" class="nav-link" target="_blank" rel="noopener noreferrer">LinkedIn</a>{% endif %}
         <a href="/logout" class="nav-logout">Sign Out</a>
     </div>
 </nav>
