@@ -1,5 +1,9 @@
 from PyPDF2 import PdfReader
 from datetime import datetime
+import io
+import re
+import zipfile
+from xml.etree import ElementTree as ET
 
 def extract_text_from_pdf(file):
     reader = PdfReader(file)
@@ -8,6 +12,72 @@ def extract_text_from_pdf(file):
         if page.extract_text():
             text += page.extract_text()
     return text
+
+
+def extract_text_from_txt(file):
+    raw = file.read()
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return raw.decode("latin-1", errors="ignore")
+
+
+def extract_text_from_docx(file):
+    file.seek(0)
+    with zipfile.ZipFile(io.BytesIO(file.read())) as archive:
+        with archive.open("word/document.xml") as doc_xml:
+            xml_content = doc_xml.read()
+    root = ET.fromstring(xml_content)
+    text_nodes = []
+    for node in root.iter():
+        if node.tag.endswith("}t") and node.text:
+            text_nodes.append(node.text)
+    return " ".join(text_nodes)
+
+
+def extract_text_from_odt(file):
+    file.seek(0)
+    with zipfile.ZipFile(io.BytesIO(file.read())) as archive:
+        with archive.open("content.xml") as content_xml:
+            xml_content = content_xml.read()
+    root = ET.fromstring(xml_content)
+    text_nodes = []
+    for node in root.iter():
+        if node.text and node.text.strip():
+            text_nodes.append(node.text.strip())
+    return " ".join(text_nodes)
+
+
+def extract_text_from_rtf(file):
+    raw = file.read()
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError:
+        text = raw.decode("latin-1", errors="ignore")
+    text = re.sub(r"\\'[0-9a-fA-F]{2}", " ", text)
+    text = re.sub(r"\\[a-zA-Z]+\d* ?", " ", text)
+    text = re.sub(r"[{}]", " ", text)
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
+
+
+def extract_text_from_upload(upload_file):
+    filename = (upload_file.filename or "").lower()
+    file_obj = upload_file.file
+    file_obj.seek(0)
+
+    if filename.endswith(".pdf"):
+        return extract_text_from_pdf(file_obj)
+    if filename.endswith(".txt") or filename.endswith(".md"):
+        return extract_text_from_txt(file_obj)
+    if filename.endswith(".docx"):
+        return extract_text_from_docx(file_obj)
+    if filename.endswith(".odt"):
+        return extract_text_from_odt(file_obj)
+    if filename.endswith(".rtf"):
+        return extract_text_from_rtf(file_obj)
+
+    raise ValueError("Unsupported file type. Use PDF, DOCX, ODT, TXT, MD, or RTF.")
 
 def clean_text(text):
     return text.lower()
