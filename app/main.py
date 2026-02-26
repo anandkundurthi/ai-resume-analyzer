@@ -46,6 +46,7 @@ def login_page(request: Request):
 
 @app.post("/login")
 def login(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+    email = email.strip().lower()
     user = db.query(User).filter(User.email == email).first()
     if not user or password != user.hashed_password:
         return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"})
@@ -55,6 +56,8 @@ def login(request: Request, email: str = Form(...), password: str = Form(...), d
 
 @app.get("/register", response_class=HTMLResponse)
 def register_page(request: Request):
+    if request.session.get("user"):
+        return RedirectResponse("/upload", status_code=303)
     return templates.TemplateResponse("register.html", {"request": request, "linkedin_url": ""})
 
 @app.post("/register")
@@ -65,9 +68,17 @@ def register(
     linkedin_url: str = Form(""),
     db: Session = Depends(get_db),
 ):
+    email = email.strip().lower()
     existing_user = db.query(User).filter(User.email == email).first()
     if existing_user:
-        return templates.TemplateResponse("register.html", {"request": request, "error": "User already exists", "linkedin_url": linkedin_url})
+        return templates.TemplateResponse(
+            "register.html",
+            {
+                "request": request,
+                "error": "User already exists. Please login.",
+                "linkedin_url": linkedin_url,
+            },
+        )
     normalized_linkedin = normalize_linkedin_url(linkedin_url)
     if linkedin_url.strip() and not normalized_linkedin:
         return templates.TemplateResponse("register.html", {"request": request, "error": "Enter a valid LinkedIn URL", "linkedin_url": linkedin_url})
