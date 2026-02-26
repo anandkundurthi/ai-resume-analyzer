@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 from app.auth_db import get_db, User, Analysis, Application
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key="supersecretkey")
+app.add_middleware(SessionMiddleware, secret_key="supersecretkey", max_age=60 * 60 * 24 * 90)
 templates = Jinja2Templates(directory="app/templates")
 
 ALL_SKILLS = skills["technical"] + skills["soft_skills"] + skills["tools"] + skills["business"]
@@ -41,7 +41,7 @@ def normalize_linkedin_url(url: str):
 
 
 def get_session_role(request: Request):
-    return request.session.get("role", "job_seeker")
+    return request.session.get("role")
 
 
 def hr_restricted_redirect(request: Request):
@@ -55,11 +55,33 @@ def get_current_user(request: Request, db: Session):
     if user_id:
         user = db.query(User).filter(User.id == user_id).first()
         if user:
+            request.session["user"] = user.email
+            request.session["user_id"] = user.id
+            request.session["role"] = user.role or "job_seeker"
+            request.session["linkedin_url"] = user.linkedin_url
             return user
+
     email = request.session.get("user")
     if not email:
         return None
-    return db.query(User).filter(User.email == email, User.role == get_session_role(request)).first()
+    role = request.session.get("role")
+    if role:
+        user = db.query(User).filter(User.email == email, User.role == role).first()
+        if user:
+            request.session["user_id"] = user.id
+            request.session["linkedin_url"] = user.linkedin_url
+            return user
+
+    # Backward-compatible recovery for older sessions that did not store role/user_id.
+    candidates = db.query(User).filter(User.email == email).order_by(User.id.desc()).all()
+    if len(candidates) == 1:
+        user = candidates[0]
+        request.session["user"] = user.email
+        request.session["user_id"] = user.id
+        request.session["role"] = user.role or "job_seeker"
+        request.session["linkedin_url"] = user.linkedin_url
+        return user
+    return None
 
 @app.get("/")
 def root():
@@ -198,12 +220,15 @@ def register_hr(
     return handle_register(request, "hr", email, password, linkedin_url, db)
 
 @app.get("/upload", response_class=HTMLResponse)
-def upload_page(request: Request):
+def upload_page(request: Request, db: Session = Depends(get_db)):
     if not request.session.get("user"):
+        return RedirectResponse("/login", status_code=303)
+    user = get_current_user(request, db)
+    if not user:
         return RedirectResponse("/login", status_code=303)
     return templates.TemplateResponse(
         "index.html",
-        {"request": request, "linkedin_url": request.session.get("linkedin_url"), "role": get_session_role(request)},
+        {"request": request, "linkedin_url": user.linkedin_url, "role": user.role or "job_seeker"},
     )
 
 @app.post("/analyze/", response_class=HTMLResponse)
