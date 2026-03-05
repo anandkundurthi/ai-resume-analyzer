@@ -9,15 +9,15 @@
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root { --navy: #0f1e35; --navy-light: #1e3a5f; --gold: #c9a84c; --gold-light: #e8c97a; --white: #f8f6f1; --muted: #8a9bb5; --bg: #f4f6f9; --green: #16a34a; --red: #dc2626; }
         body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--navy); min-height: 100vh; }
-        nav { background: var(--navy); padding: 0 48px; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+        nav { background: var(--navy); padding: 10px 24px; min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
         .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
         .brand-icon { width: 34px; height: 34px; background: linear-gradient(135deg, var(--gold), var(--gold-light)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
         .brand-name { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--white); }
         .brand-name span { color: var(--gold); }
-        .nav-links { display: flex; align-items: center; gap: 8px; }
-        .nav-link { text-decoration: none; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; color: var(--muted); transition: all 0.2s; }
-        .nav-link:hover { color: var(--white); background: rgba(255,255,255,0.07); }
-        .nav-link.active { color: var(--white); }
+        .nav-links { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+        .nav-link { text-decoration: none; font-size: 13px; font-weight: 500; color: #b9c7dd; padding: 4px 0; border-bottom: 2px solid transparent; transition: color 0.2s, border-color 0.2s; }
+        .nav-link:hover { color: var(--white); border-color: rgba(255,255,255,0.25); }
+        .nav-link.active { color: var(--white); border-color: var(--gold); }
         .nav-logout { text-decoration: none; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; color: var(--navy); background: var(--gold); transition: all 0.2s; }
         .nav-logout:hover { background: var(--gold-light); }
         main { max-width: 1000px; margin: 0 auto; padding: 50px 24px; }
@@ -26,15 +26,18 @@
         .page-header p { font-size: 14px; color: #8a9bb5; }
         .btn-new { text-decoration: none; padding: 12px 22px; background: var(--navy); color: var(--white); border-radius: 10px; font-size: 14px; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
         .btn-new:hover { background: var(--navy-light); transform: translateY(-1px); box-shadow: 0 8px 20px rgba(15,30,53,0.2); }
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; animation: fadeUp 0.5s 0.1s ease both; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; animation: fadeUp 0.5s 0.1s ease both; }
         .stat-card { background: white; border-radius: 16px; padding: 28px; border: 1px solid #e8edf5; box-shadow: 0 1px 8px rgba(15,30,53,0.04); display: flex; align-items: center; gap: 20px; }
         .stat-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
         .icon-navy { background: rgba(15,30,53,0.08); }
         .icon-gold { background: rgba(201,168,76,0.12); }
         .icon-green { background: rgba(22,163,74,0.1); }
+        .icon-blue { background: rgba(59,130,246,0.12); }
         .stat-num { font-family: 'Playfair Display', serif; font-size: 32px; color: var(--navy); line-height: 1; margin-bottom: 4px; }
         .stat-label { font-size: 13px; color: #8a9bb5; font-weight: 500; }
-        .table-card { background: white; border-radius: 16px; border: 1px solid #e8edf5; box-shadow: 0 1px 8px rgba(15,30,53,0.04); overflow: hidden; animation: fadeUp 0.5s 0.15s ease both; }
+        .chart-card { background: white; border-radius: 16px; border: 1px solid #e8edf5; box-shadow: 0 1px 8px rgba(15,30,53,0.04); overflow: hidden; animation: fadeUp 0.5s 0.13s ease both; margin-bottom: 28px; padding: 24px 28px; }
+        .chart-title { font-size: 15px; font-weight: 600; color: var(--navy); margin-bottom: 16px; }
+        canvas { width: 100% !important; height: 180px !important; }
         .table-header { padding: 24px 28px; border-bottom: 1px solid #f0f4f8; display: flex; justify-content: space-between; align-items: center; }
         .table-title { font-size: 15px; font-weight: 600; color: var(--navy); }
         .table-count { font-size: 13px; color: #8a9bb5; background: #f4f6f9; padding: 4px 12px; border-radius: 20px; }
@@ -58,21 +61,56 @@
         .empty-table p { font-size: 14px; }
         .btn-start { display: inline-block; margin-top: 16px; text-decoration: none; padding: 10px 20px; background: var(--navy); color: var(--white); border-radius: 8px; font-size: 14px; font-weight: 600; transition: all 0.2s; }
         .btn-start:hover { background: var(--navy-light); }
+        @media (max-width: 980px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 720px) {
+            nav { padding: 10px 14px; }
+            main { padding: 34px 14px; }
+            .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .table-card { overflow-x: auto; }
+            table { min-width: 720px; }
+        }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+        .hamburger { display: none; background: none; border: none; cursor: pointer; padding: 6px; }
+        .hamburger span { display: block; width: 22px; height: 2px; background: var(--white); margin: 4px 0; border-radius: 2px; transition: all 0.3s; }
+        @media (max-width: 820px) {
+            .hamburger { display: block; }
+            .nav-links { display: none; flex-direction: column; position: absolute; top: 64px; left: 0; right: 0; background: var(--navy); padding: 12px 20px 20px; gap: 14px; z-index: 100; border-top: 1px solid rgba(255,255,255,0.08); }
+            .nav-links.open { display: flex; }
+            nav { position: relative; }
+        }
     </style>
 </head>
 <body>
 <nav>
     <a href="/upload" class="brand"><div class="brand-icon">📄</div><div class="brand-name">Resume<span>AI</span></div></a>
+
+    <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+    </button>
     <div class="nav-links">
         <a href="/upload" class="nav-link">Analyze</a>
         <a href="/dashboard" class="nav-link active">Dashboard</a>
+        {% if role != "hr" %}
+        <a href="/applications" class="nav-link">Applications</a>
+        <a href="/ats-resume" class="nav-link">ATS Resume</a>
+        <a href="/cover-letter" class="nav-link">Cover Letter</a>
+        {% endif %}
+        <a href="/profile" class="nav-link">Profile</a>
+        {% if linkedin_url %}
+        <a href="{{ linkedin_url }}" class="nav-link" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+        {% endif %}
         <a href="/logout" class="nav-logout">Sign Out</a>
     </div>
 </nav>
 <main>
     <div class="page-header">
+        {% if role == "hr" %}
+        <div><h1>HR Dashboard</h1><p>Track candidate-job match analysis history</p></div>
+        {% else %}
         <div><h1>Dashboard</h1><p>Track your resume analysis history</p></div>
+        {% endif %}
         <a href="/upload" class="btn-new">+ New Analysis</a>
     </div>
     <div class="stats-grid">
@@ -82,7 +120,19 @@
             <div class="stat-num">{% set high_count = namespace(value=0) %}{% for a in analyses %}{% if a.score >= 60 %}{% set high_count.value = high_count.value + 1 %}{% endif %}{% endfor %}{{ high_count.value }}</div>
             <div class="stat-label">Strong Matches (60%+)</div>
         </div></div>
+        <div class="stat-card"><div class="stat-icon icon-blue">📈</div><div>
+            <div class="stat-num">
+                {% if score_change > 0 %}+{% endif %}{{ score_change }}%
+            </div>
+            <div class="stat-label">Last Change ({{ last_score }}%)</div>
+        </div></div>
     </div>
+    {% if analyses | length > 1 %}
+    <div class="chart-card">
+        <div class="chart-title">📈 Score History</div>
+        <canvas id="scoreChart"></canvas>
+    </div>
+    {% endif %}
     <div class="table-card">
         <div class="table-header">
             <div class="table-title">Analysis History</div>
@@ -120,5 +170,43 @@
         {% endif %}
     </div>
 </main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+{% if analyses | length > 1 %}
+const labels = {{ score_history | map(attribute='label') | list | tojson }};
+const scores = {{ score_history | map(attribute='score') | list | tojson }};
+new Chart(document.getElementById('scoreChart'), {
+    type: 'line',
+    data: {
+        labels,
+        datasets: [{
+            label: 'Match Score (%)',
+            data: scores,
+            borderColor: '#c9a84c',
+            backgroundColor: 'rgba(201,168,76,0.08)',
+            borderWidth: 2,
+            pointBackgroundColor: '#c9a84c',
+            pointRadius: 4,
+            tension: 0.3,
+            fill: true,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { min: 0, max: 100, grid: { color: '#f0f4f8' }, ticks: { color: '#8a9bb5' } },
+            x: { grid: { display: false }, ticks: { color: '#8a9bb5' } }
+        }
+    }
+});
+{% endif %}
+</script>
+
+<script>
+const hbg = document.getElementById('hamburger');
+const navLinks = document.querySelector('.nav-links');
+if (hbg) hbg.addEventListener('click', () => navLinks.classList.toggle('open'));
+</script>
 </body>
 </html>

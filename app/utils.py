@@ -1,4 +1,10 @@
 from PyPDF2 import PdfReader
+from datetime import datetime
+import io
+import re
+import textwrap
+import zipfile
+from xml.etree import ElementTree as ET
 
 def extract_text_from_pdf(file):
     reader = PdfReader(file)
@@ -7,6 +13,72 @@ def extract_text_from_pdf(file):
         if page.extract_text():
             text += page.extract_text()
     return text
+
+
+def extract_text_from_txt(file):
+    raw = file.read()
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return raw.decode("latin-1", errors="ignore")
+
+
+def extract_text_from_docx(file):
+    file.seek(0)
+    with zipfile.ZipFile(io.BytesIO(file.read())) as archive:
+        with archive.open("word/document.xml") as doc_xml:
+            xml_content = doc_xml.read()
+    root = ET.fromstring(xml_content)
+    text_nodes = []
+    for node in root.iter():
+        if node.tag.endswith("}t") and node.text:
+            text_nodes.append(node.text)
+    return " ".join(text_nodes)
+
+
+def extract_text_from_odt(file):
+    file.seek(0)
+    with zipfile.ZipFile(io.BytesIO(file.read())) as archive:
+        with archive.open("content.xml") as content_xml:
+            xml_content = content_xml.read()
+    root = ET.fromstring(xml_content)
+    text_nodes = []
+    for node in root.iter():
+        if node.text and node.text.strip():
+            text_nodes.append(node.text.strip())
+    return " ".join(text_nodes)
+
+
+def extract_text_from_rtf(file):
+    raw = file.read()
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError:
+        text = raw.decode("latin-1", errors="ignore")
+    text = re.sub(r"\\'[0-9a-fA-F]{2}", " ", text)
+    text = re.sub(r"\\[a-zA-Z]+\d* ?", " ", text)
+    text = re.sub(r"[{}]", " ", text)
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
+
+
+def extract_text_from_upload(upload_file):
+    filename = (upload_file.filename or "").lower()
+    file_obj = upload_file.file
+    file_obj.seek(0)
+
+    if filename.endswith(".pdf"):
+        return extract_text_from_pdf(file_obj)
+    if filename.endswith(".txt") or filename.endswith(".md"):
+        return extract_text_from_txt(file_obj)
+    if filename.endswith(".docx"):
+        return extract_text_from_docx(file_obj)
+    if filename.endswith(".odt"):
+        return extract_text_from_odt(file_obj)
+    if filename.endswith(".rtf"):
+        return extract_text_from_rtf(file_obj)
+
+    raise ValueError("Unsupported file type. Use PDF, DOCX, ODT, TXT, MD, or RTF.")
 
 def clean_text(text):
     return text.lower()
@@ -59,3 +131,365 @@ def generate_career_suggestions(score, missing_skills):
     if "docker" in missing_skills:
         suggestions.append("Docker knowledge is essential for DevOps and Backend Engineering roles.")
     return suggestions
+
+
+def generate_action_plan(score, matched_skills, missing_skills):
+    strengths = matched_skills[:5]
+    focus_skills = missing_skills[:5]
+
+    if score >= 80:
+        level = "Strong Fit"
+        headline = "You are interview-ready for many roles in this category."
+    elif score >= 60:
+        level = "Competitive Fit"
+        headline = "You are close to target. Closing top gaps can significantly improve outcomes."
+    elif score >= 40:
+        level = "Developing Fit"
+        headline = "You have partial alignment. Build core skills and strengthen evidence in projects."
+    else:
+        level = "Early Fit"
+        headline = "You need stronger baseline alignment before applying broadly."
+
+    priority_actions = []
+    for skill in focus_skills[:3]:
+        priority_actions.append(f"Build and document one project outcome using {skill}.")
+    while len(priority_actions) < 3:
+        priority_actions.append("Add measurable impact bullets using metrics (%, $, time saved).")
+
+    week_plan = [
+        "Week 1: Prioritize top 2 missing skills and create a focused learning schedule.",
+        "Week 2: Build a mini-project that demonstrates those skills with business impact.",
+        "Week 3: Rewrite resume bullets using action verbs and quantified outcomes.",
+        "Week 4: Re-analyze resume and apply to roles matching your improved profile.",
+    ]
+
+    resume_edits = [
+        "Move strongest, role-relevant projects to the top half of the resume.",
+        "Add a 2-line professional summary aligned with the target job.",
+        "Tailor skills order so required keywords appear naturally in context.",
+    ]
+
+    return {
+        "level": level,
+        "headline": headline,
+        "strengths": strengths,
+        "focus_skills": focus_skills,
+        "priority_actions": priority_actions,
+        "week_plan": week_plan,
+        "resume_edits": resume_edits,
+    }
+
+
+def build_report_text(user_email, score, matched_skills, missing_skills, action_plan):
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    matched_text = ", ".join(matched_skills[:10]) if matched_skills else "None identified"
+    missing_text = ", ".join(missing_skills[:10]) if missing_skills else "None identified"
+
+    lines = [
+        "ResumeAI Professional Feedback Report",
+        "===================================",
+        f"Candidate: {user_email}",
+        f"Generated on: {today} UTC",
+        "",
+        f"Match Score: {score}%",
+        f"Fit Level: {action_plan['level']}",
+        f"Summary: {action_plan['headline']}",
+        "",
+        "Top Matched Skills:",
+        matched_text,
+        "",
+        "Top Missing Skills:",
+        missing_text,
+        "",
+        "Priority Actions:",
+        f"1. {action_plan['priority_actions'][0]}",
+        f"2. {action_plan['priority_actions'][1]}",
+        f"3. {action_plan['priority_actions'][2]}",
+        "",
+        "30-Day Roadmap:",
+        f"- {action_plan['week_plan'][0]}",
+        f"- {action_plan['week_plan'][1]}",
+        f"- {action_plan['week_plan'][2]}",
+        f"- {action_plan['week_plan'][3]}",
+        "",
+        "Resume Improvement Checklist:",
+        f"- {action_plan['resume_edits'][0]}",
+        f"- {action_plan['resume_edits'][1]}",
+        f"- {action_plan['resume_edits'][2]}",
+    ]
+    return "\n".join(lines)
+
+
+def analyze_resume_quality(resume_text):
+    text = resume_text or ""
+    text_lower = text.lower()
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+
+    checks = []
+
+    has_email = bool(re.search(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", text))
+    checks.append({"label": "Email present", "passed": has_email})
+
+    has_phone = bool(re.search(r"(\+\d{1,3}[\s-]?)?(\(?\d{3}\)?[\s-]?)\d{3}[\s-]?\d{4}", text))
+    checks.append({"label": "Phone number present", "passed": has_phone})
+
+    has_linkedin = "linkedin.com/in/" in text_lower
+    checks.append({"label": "LinkedIn profile included", "passed": has_linkedin})
+
+    has_github = "github.com/" in text_lower
+    checks.append({"label": "GitHub/portfolio link included", "passed": has_github})
+
+    has_numbers = bool(re.search(r"\d+%|\d+\+|\$\d+|\d+\s*(users|projects|clients|months|years)", text_lower))
+    checks.append({"label": "Quantified impact metrics", "passed": has_numbers})
+
+    action_verbs = {"built", "developed", "implemented", "designed", "optimized", "led", "improved", "delivered", "automated", "created"}
+    bullet_lines = [line.lower() for line in lines if line.startswith(("-", "*", "•"))]
+    has_action_verbs = any(any(verb in line for verb in action_verbs) for line in bullet_lines)
+    checks.append({"label": "Action-oriented bullet points", "passed": has_action_verbs})
+
+    has_sections = ("experience" in text_lower) and ("skills" in text_lower)
+    checks.append({"label": "Core sections (Skills + Experience)", "passed": has_sections})
+
+    passed_count = sum(1 for item in checks if item["passed"])
+    score = int(round((passed_count / len(checks)) * 100))
+
+    suggestions = [f"Add: {item['label']}" for item in checks if not item["passed"]]
+    return {"score": score, "checks": checks, "suggestions": suggestions}
+
+
+def parse_multiline_items(raw_text):
+    if not raw_text:
+        return []
+    items = []
+    for line in raw_text.splitlines():
+        cleaned = line.strip().lstrip("-").strip()
+        if cleaned:
+            items.append(cleaned)
+    return items
+
+
+def parse_comma_items(raw_text):
+    if not raw_text:
+        return []
+    return [item.strip() for item in raw_text.split(",") if item.strip()]
+
+
+def build_ats_resume_text(data):
+    full_name = (data.get("full_name") or "").strip()
+    email = (data.get("email") or "").strip()
+    phone = (data.get("phone") or "").strip()
+    location = (data.get("location") or "").strip()
+    linkedin = (data.get("linkedin") or "").strip()
+    github = (data.get("github") or "").strip()
+    summary = (data.get("summary") or "").strip()
+    skills = parse_comma_items(data.get("skills"))
+    experience = parse_multiline_items(data.get("experience"))
+    projects = parse_multiline_items(data.get("projects"))
+    education = parse_multiline_items(data.get("education"))
+    certifications = parse_multiline_items(data.get("certifications"))
+
+    header_parts = [part for part in [email, phone, location] if part]
+    if linkedin:
+        header_parts.append(linkedin)
+    if github:
+        header_parts.append(github)
+
+    lines = []
+    lines.append(full_name or "CANDIDATE NAME")
+    lines.append(" | ".join(header_parts))
+    lines.append("")
+
+    lines.append("PROFESSIONAL SUMMARY")
+    lines.append(summary or "Add a concise 2-3 line summary aligned with your target role and measurable outcomes.")
+    lines.append("")
+
+    lines.append("CORE SKILLS")
+    lines.append(", ".join(skills) if skills else "Add role-relevant keywords such as Python, SQL, FastAPI, Docker, and Cloud.")
+    lines.append("")
+
+    lines.append("PROFESSIONAL EXPERIENCE")
+    if experience:
+        for item in experience:
+            lines.append(f"- {item}")
+    else:
+        lines.append("- Add role, company, dates, and quantified impact bullets.")
+    lines.append("")
+
+    lines.append("PROJECTS")
+    if projects:
+        for item in projects:
+            lines.append(f"- {item}")
+    else:
+        lines.append("- Add projects with tech stack and measurable outcomes.")
+    lines.append("")
+
+    lines.append("EDUCATION")
+    if education:
+        for item in education:
+            lines.append(f"- {item}")
+    else:
+        lines.append("- Add degree, institution, and graduation year.")
+    lines.append("")
+
+    lines.append("CERTIFICATIONS")
+    if certifications:
+        for item in certifications:
+            lines.append(f"- {item}")
+    else:
+        lines.append("- Add relevant certifications or leave this section out if not applicable.")
+
+    return "\n".join(lines)
+
+
+def build_ats_resume_pdf_bytes(resume_text):
+    from reportlab.lib.pagesizes import LETTER
+    from reportlab.pdfgen import canvas
+
+    output = io.BytesIO()
+    pdf = canvas.Canvas(output, pagesize=LETTER)
+    width, height = LETTER
+    x_pos = 50
+    y_pos = height - 50
+
+    for raw_line in resume_text.splitlines():
+        line = raw_line.rstrip()
+        wrapped_lines = textwrap.wrap(line, width=95) if line else [""]
+        for wrapped in wrapped_lines:
+            if y_pos < 50:
+                pdf.showPage()
+                y_pos = height - 50
+            if line.isupper() and len(line) < 60:
+                pdf.setFont("Helvetica-Bold", 11)
+            else:
+                pdf.setFont("Helvetica", 11)
+            pdf.drawString(x_pos, y_pos, wrapped)
+            y_pos -= 14
+
+    pdf.save()
+    output.seek(0)
+    return output.getvalue()
+
+
+def build_ats_resume_docx_bytes(resume_text):
+    from docx import Document
+
+    doc = Document()
+    for raw_line in resume_text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            doc.add_paragraph("")
+            continue
+        if line.isupper() and len(line) < 60:
+            title = doc.add_paragraph()
+            title.add_run(line).bold = True
+        elif line.startswith("- "):
+            doc.add_paragraph(line[2:], style="List Bullet")
+        else:
+            doc.add_paragraph(line)
+
+    output = io.BytesIO()
+    doc.save(output)
+    output.seek(0)
+    return output.getvalue()
+
+
+def build_cover_letter_pdf_bytes(letter_text):
+    from reportlab.lib.pagesizes import LETTER
+    from reportlab.pdfgen import canvas
+
+    output = io.BytesIO()
+    pdf = canvas.Canvas(output, pagesize=LETTER)
+    width, height = LETTER
+    x_pos = 72
+    y_pos = height - 72
+
+    for raw_line in letter_text.splitlines():
+        line = raw_line.rstrip()
+        wrapped_lines = textwrap.wrap(line, width=85) if line else [""]
+        for wrapped in wrapped_lines:
+            if y_pos < 72:
+                pdf.showPage()
+                y_pos = height - 72
+            pdf.setFont("Helvetica", 11)
+            pdf.drawString(x_pos, y_pos, wrapped)
+            y_pos -= 16
+
+    pdf.save()
+    output.seek(0)
+    return output.getvalue()
+
+
+def build_cover_letter_docx_bytes(letter_text):
+    from docx import Document
+    from docx.shared import Pt
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+    doc = Document()
+    for section in doc.sections:
+        section.top_margin = section.bottom_margin = section.left_margin = section.right_margin = Pt(72)
+
+    for raw_line in letter_text.splitlines():
+        line = raw_line.strip()
+        para = doc.add_paragraph()
+        if not line:
+            continue
+        run = para.add_run(line)
+        run.font.size = Pt(11)
+
+    output = io.BytesIO()
+    doc.save(output)
+    output.seek(0)
+    return output.getvalue()
+
+
+    full_name = (data.get("full_name") or "").strip()
+    email = (data.get("email") or "").strip()
+    phone = (data.get("phone") or "").strip()
+    linkedin = (data.get("linkedin") or "").strip()
+    company = (data.get("company") or "").strip()
+    role = (data.get("role") or "").strip()
+    hiring_manager = (data.get("hiring_manager") or "").strip() or "Hiring Manager"
+    years_experience = (data.get("years_experience") or "").strip()
+    top_skills = parse_comma_items(data.get("top_skills"))
+    achievements = parse_multiline_items(data.get("achievements"))
+
+    skills_text = ", ".join(top_skills[:5]) if top_skills else "relevant technical and leadership skills"
+    achievement_text = achievements[0] if achievements else "delivered measurable outcomes through focused execution"
+    exp_text = f" with {years_experience} years of experience" if years_experience else ""
+    today = datetime.utcnow().strftime("%B %d, %Y")
+
+    header_contact = " | ".join([item for item in [email, phone, linkedin] if item])
+    lines = [
+        full_name or "Candidate Name",
+        header_contact,
+        "",
+        today,
+        "",
+        f"{hiring_manager}",
+        company or "Company Name",
+        "",
+        f"Subject: Application for {role or 'the role'}",
+        "",
+        f"Dear {hiring_manager},",
+        "",
+        (
+            f"I am excited to apply for the {role or 'position'} role at {company or 'your company'}."
+            f" I bring{exp_text} and a strong foundation in {skills_text}."
+        ),
+        "",
+        (
+            f"In my recent work, I {achievement_text}. "
+            "I focus on delivering business impact, clean execution, and reliable collaboration across teams."
+        ),
+        "",
+        (
+            f"I am confident that my background aligns well with the needs of {company or 'your team'}."
+            " I would welcome the opportunity to discuss how I can contribute to your goals."
+        ),
+        "",
+        "Thank you for your time and consideration.",
+        "",
+        "Sincerely,",
+        full_name or "Candidate Name",
+    ]
+    return "\n".join(lines)

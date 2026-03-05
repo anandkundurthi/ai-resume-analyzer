@@ -1,7 +1,10 @@
 fastapi
-uvicorn
+uvicorn[standard]
 jinja2
 python-multipart
 sqlalchemy
 itsdangerous
 PyPDF2
+reportlab
+python-docx
+starlette
