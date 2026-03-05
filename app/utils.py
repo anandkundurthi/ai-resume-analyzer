@@ -386,16 +386,17 @@ def build_ats_resume_docx_bytes(resume_text):
             doc.add_paragraph(line[2:], style="List Bullet")
         else:
             doc.add_paragraph(line)
-
     output = io.BytesIO()
     doc.save(output)
     output.seek(0)
     return output.getvalue()
 
 
-def build_cover_letter_pdf_bytes(letter_text):
-    from reportlab.lib.pagesizes import LETTER
-    from reportlab.pdfgen import canvas
+def build_cover_letter_text(data):
+    full_name = (data.get("full_name") or "").strip()
+
+
+    
 
     output = io.BytesIO()
     pdf = canvas.Canvas(output, pagesize=LETTER)
